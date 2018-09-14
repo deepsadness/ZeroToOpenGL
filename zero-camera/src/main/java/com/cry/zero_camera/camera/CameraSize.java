@@ -1,7 +1,6 @@
 package com.cry.zero_camera.camera;
 
 import android.support.annotation.NonNull;
-import android.util.ArrayMap;
 
 import java.util.HashMap;
 import java.util.Set;
@@ -26,6 +25,10 @@ public class CameraSize implements Comparable<CameraSize> {
     public CameraSize(int width, int height) {
         mWidth = width;
         mHeight = height;
+    }
+
+    public CameraSize inverse() {
+        return new CameraSize(mHeight, mWidth);
     }
 
     @Override
@@ -95,12 +98,12 @@ public class CameraSize implements Comparable<CameraSize> {
             return mRatioSizeSets.get(ratio);
         }
 
-        public void clear(){
+        public void clear() {
             mRatioSizeSets.clear();
         }
 
-        public boolean isEmpty(){
-           return mRatioSizeSets.isEmpty();
+        public boolean isEmpty() {
+            return mRatioSizeSets.isEmpty();
         }
     }
 }

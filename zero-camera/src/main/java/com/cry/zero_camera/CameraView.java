@@ -1,13 +1,13 @@
 package com.cry.zero_camera;
 
 import android.content.Context;
-import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
-import com.cry.zero_camera.camera.ref.AiyaCamera;
-import com.cry.zero_camera.camera.ref.IAiyaCamera;
+import com.cry.zero_camera.camera.CameraApi14;
+import com.cry.zero_camera.camera.CameraSize;
+import com.cry.zero_camera.camera.ICamera;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -16,7 +16,8 @@ import javax.microedition.khronos.opengles.GL10;
  * 创建一个OpenGL环境。在这里创建Camera 和 Camera输出的SurfaceView
  */
 public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer {
-    private IAiyaCamera mCameraApi;
+//    private IAiyaCamera mCameraApi;
+    private ICamera mCameraApi;
 //    private int mCameraIdDefault = Camera.CameraInfo.CAMERA_FACING_BACK;
     private int mCameraIdDefault = 0;
     private CameraDrawer mCameraDrawer;
@@ -36,7 +37,8 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
     }
 
     private void initCameraApi(Context context) {
-        mCameraApi = new AiyaCamera();
+//        mCameraApi = new KitkatCamera();
+        mCameraApi = new CameraApi14();
         mCameraDrawer = new CameraDrawer(context.getResources());
     }
 
@@ -47,12 +49,14 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
         mCameraApi.open(mCameraIdDefault);
         mCameraDrawer.setCameraId(mCameraIdDefault);
 
-        Point previewSize = mCameraApi.getPreviewSize();
-//        int previewSizeWidth = previewSize.getWidth();
-//        int previewSizeHeight = previewSize.getHeight();
 
-        int previewSizeWidth = previewSize.x;
-        int previewSizeHeight = previewSize.y;
+        CameraSize previewSize = mCameraApi.getPreviewSize();
+        int previewSizeWidth = previewSize.getWidth();
+        int previewSizeHeight = previewSize.getHeight();
+
+//      Point previewSize = mCameraApi.getPreviewSize();
+//        int previewSizeWidth = previewSize.x;
+//        int previewSizeHeight = previewSize.y;
 
         mCameraDrawer.setPreviewSize(previewSizeWidth, previewSizeHeight);
 

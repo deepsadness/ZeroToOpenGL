@@ -18,6 +18,7 @@ import javax.microedition.khronos.opengles.GL10;
  * 1->给Camera提供SurfaceView
  */
 public class CameraDrawer implements GLSurfaceView.Renderer {
+//    private final AFilter mOesFilter;
     private final OesFilter mOesFilter;
     //相机的id
     private int mCameraId = 0;
@@ -51,7 +52,7 @@ public class CameraDrawer implements GLSurfaceView.Renderer {
         mSurfaceTexture = new SurfaceTexture(mTextureId);
 
         //创建滤镜.同时绑定滤镜上
-        mOesFilter.onCreate();
+        mOesFilter.create();
         mOesFilter.setTextureId(mTextureId);
     }
 

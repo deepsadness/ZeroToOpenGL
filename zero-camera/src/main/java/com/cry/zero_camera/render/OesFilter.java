@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 /**
  * 接受来自相机的oes纹理
@@ -60,11 +61,12 @@ public class OesFilter {
             1.0f, 0.0f,
             1.0f, 1.0f,
     };
+    public static final float[] OM= MatrixUtils.getOriginalMatrix();
 
 
     private int mUCoordMatrix;
-    private float[] mCoordMatrix = MatrixUtils.getOriginalMatrix();
-    private float[] matrix = MatrixUtils.getOriginalMatrix();
+    private float[] mCoordMatrix = Arrays.copyOf(OM,16);
+    private float[] matrix = Arrays.copyOf(OM,16);
 
     public OesFilter(Resources resources) {
         this.mRes = resources;
@@ -73,6 +75,10 @@ public class OesFilter {
 
     public void setCoordMatrix(float[] matrix) {
         this.mCoordMatrix = matrix;
+    }
+
+    public void create() {
+        onCreate();
     }
 
     //load shader and link program . get uniform and varying

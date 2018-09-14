@@ -80,7 +80,7 @@ public class CameraApi14 implements ICamera {
                 mPictureSizes.add(new CameraSize(size.width, size.height));
             }
             //挑选出最需要的参数
-            adJustParametersByAspectRatio(mPreviewSizes, mPictureSizes);
+            adJustParametersByAspectRatio2(mPreviewSizes, mPictureSizes);
             return true;
         }
         return false;
@@ -104,11 +104,47 @@ public class CameraApi14 implements ICamera {
         }
 
         //默认去取最大的尺寸
-        mPicSize = pictureSizes.sizes(mDesiredAspectRatio).last();
+        mPicSize = pictureSizes.sizes(mDesiredAspectRatio).first();
 
         mCameraParameters.setPreviewSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         mCameraParameters.setPictureSize(mPicSize.getWidth(), mPicSize.getHeight());
 
+        //设置对角和闪光灯
+        setAutoFocusInternal(mAutoFocus);
+        //先不设置闪光灯
+//        mCameraParameters.setFlashMode("FLASH_MODE_OFF");
+
+        //设置到camera中
+//        mCameraParameters.setRotation(90);
+        mCamera.setParameters(mCameraParameters);
+//        mCamera.setDisplayOrientation(90);
+//        setCameraDisplayOrientation();
+    }
+
+    private void adJustParametersByAspectRatio2(CameraSize.ISizeMap previewSizes, CameraSize.ISizeMap pictureSizes) {
+        //得到当前预期比例的size
+        SortedSet<CameraSize> sizes = previewSizes.sizes(mDesiredAspectRatio);
+        if (sizes == null) {  //表示不支持.
+            // TODO: 2018/9/14 这里应该抛出异常？
+            return;
+        }
+        //当前先不考虑Orientation
+        mPreviewSize = sizes.first();
+//        mPreviewSize = new CameraSize(mDesiredWidth, mDesiredHeight);
+//        if (mCameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
+////            mPreviewSize = new CameraSize(mDesiredHeight, mDesiredWidth);
+////            mCameraParameters.setRotation(90);
+//        } else {
+////            previewSize = mPreviewSize;
+//        }
+        //默认去取最大的尺寸
+        mPicSize = pictureSizes.sizes(mDesiredAspectRatio).first();
+
+        mCameraParameters.setPreviewSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+        mCameraParameters.setPictureSize(mPicSize.getWidth(), mPicSize.getHeight());
+
+        mPreviewSize = mPreviewSize.inverse();
+        mPicSize = mPicSize.inverse();
         //设置对角和闪光灯
         setAutoFocusInternal(mAutoFocus);
         //先不设置闪光灯

@@ -2,20 +2,11 @@ package com.cry.zero_camera;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 import com.cry.zero_common.permission.ConfirmationDialogFragment;
 import com.tbruyelle.rxpermissions2.RxPermissions;
@@ -23,6 +14,7 @@ import com.tbruyelle.rxpermissions2.RxPermissions;
 public class CameraActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 2;
     private FrameLayout mContainer;
+//    public CameraViewO mCameraView;
     public CameraView mCameraView;
     private RxPermissions rxPermissions;
 
@@ -72,6 +64,7 @@ public class CameraActivity extends AppCompatActivity {
 
     private void startCamera() {
         if (mCameraView == null) {
+//            mCameraView = new CameraViewO(this);
             mCameraView = new CameraView(this);
             mContainer.addView(mCameraView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
