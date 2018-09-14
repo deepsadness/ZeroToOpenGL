@@ -1,10 +1,13 @@
 package com.cry.zero_camera;
 
 import android.content.Context;
+import android.graphics.Point;
+import android.graphics.SurfaceTexture;
+import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
-import com.cry.zero_camera.camera.CameraApi14;
-import com.cry.zero_camera.camera.ICamera;
+import com.cry.zero_camera.camera.ref.AiyaCamera;
+import com.cry.zero_camera.camera.ref.IAiyaCamera;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -13,33 +16,15 @@ import javax.microedition.khronos.opengles.GL10;
  * 创建一个OpenGL环境。在这里创建Camera 和 Camera输出的SurfaceView
  */
 public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer {
-    private ICamera mCameraApi;
+    private IAiyaCamera mCameraApi;
+//    private int mCameraIdDefault = Camera.CameraInfo.CAMERA_FACING_BACK;
     private int mCameraIdDefault = 0;
+    private CameraDrawer mCameraDrawer;
 
     public CameraView(Context context) {
         super(context);
-        initCameraApi(context);
-    }
-
-    private void initCameraApi(Context context) {
-        mCameraApi = new CameraApi14();
-    }
-
-    public void onPause() {
-        super.onPause();
-        mCameraApi.close();
-    }
-
-    public void onResume() {
-
-    }
-
-    @Override
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         initEGL();
-        //打开相机
-        mCameraApi.open(mCameraIdDefault);
-        mCameraApi.preview();
+        initCameraApi(context);
     }
 
     private void initEGL() {
@@ -50,13 +35,53 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
         setRenderMode(RENDERMODE_WHEN_DIRTY);
     }
 
+    private void initCameraApi(Context context) {
+        mCameraApi = new AiyaCamera();
+        mCameraDrawer = new CameraDrawer(context.getResources());
+    }
+
+    @Override
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        mCameraDrawer.onSurfaceCreated(gl, config);
+
+        mCameraApi.open(mCameraIdDefault);
+        mCameraDrawer.setCameraId(mCameraIdDefault);
+
+        Point previewSize = mCameraApi.getPreviewSize();
+//        int previewSizeWidth = previewSize.getWidth();
+//        int previewSizeHeight = previewSize.getHeight();
+
+        int previewSizeWidth = previewSize.x;
+        int previewSizeHeight = previewSize.y;
+
+        mCameraDrawer.setPreviewSize(previewSizeWidth, previewSizeHeight);
+
+        mCameraApi.setPreviewTexture(mCameraDrawer.getSurfaceTexture());
+        //默认使用的GLThread.每次刷新的时候，都强制要求是刷新这个GLSurfaceView
+        mCameraDrawer.getSurfaceTexture().setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+            @Override
+            public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+                requestRender();
+            }
+        });
+        mCameraApi.preview();
+    }
+
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-
+        mCameraDrawer.onSurfaceChanged(gl, width, height);
+        //设置ViewPort是必须要做的
+        GLES20.glViewport(0, 0, width, height);
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
+        mCameraDrawer.onDrawFrame(gl);
+    }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        mCameraApi.close();
     }
 }

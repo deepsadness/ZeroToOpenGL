@@ -77,7 +77,7 @@ public class OesFilter {
 
     //load shader and link program . get uniform and varying
     public void onCreate() {
-        createProgramByAssetsFile("shader/oes_base_vertex.glsl", "shader/oes_base_filter_fragment.glsl");
+        createProgramByAssetsFile("shader/oes_base_vertex.glsl", "shader/oes_base_fragment.glsl");
         mUCoordMatrix = GLES20.glGetUniformLocation(mProgram, "uCoordinateMatrix");
     }
 
@@ -112,7 +112,7 @@ public class OesFilter {
         mProgram = uCreateGlProgram(vertex, fragment);
         //两个变量varying vPosition和vCoord
         mAPosition = GLES20.glGetAttribLocation(mProgram, "aPosition");
-        mACoord = GLES20.glGetAttribLocation(mProgram, "uCoordinateMatrix");
+        mACoord = GLES20.glGetAttribLocation(mProgram, "aCoordinate");
 
         //两个uniform texture 和 matrix
         mUMatrix = GLES20.glGetUniformLocation(mProgram, "uMatrix");

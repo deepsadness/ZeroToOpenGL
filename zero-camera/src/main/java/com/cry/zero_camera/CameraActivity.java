@@ -35,7 +35,6 @@ public class CameraActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_camera);
         mContainer = (FrameLayout) findViewById(R.id.container);
-
         rxPermissions = new RxPermissions(this);
     }
 
@@ -73,8 +72,8 @@ public class CameraActivity extends AppCompatActivity {
 
     private void startCamera() {
         if (mCameraView == null) {
-//            mCameraView = new CameraView(this);
-//            mContainer.addView(mCameraView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            mCameraView = new CameraView(this);
+            mContainer.addView(mCameraView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
     }
 }

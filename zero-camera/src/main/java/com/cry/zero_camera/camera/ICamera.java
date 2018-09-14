@@ -35,4 +35,7 @@ public interface ICamera {
      * @param surfaceTexture
      */
     void setPreviewTexture(SurfaceTexture surfaceTexture);
+
+    CameraSize getPreviewSize();
+    CameraSize getPictureSize();
 }

@@ -35,7 +35,6 @@ public class CameraApi14 implements ICamera {
     private Camera.Parameters mCameraParameters;
 
 
-
     //想要的尺寸。
     private int mDesiredHeight = 1920;
     private int mDesiredWidth = 1080;
@@ -51,9 +50,8 @@ public class CameraApi14 implements ICamera {
     public CameraApi14() {
         mDesiredHeight = 1920;
         mDesiredWidth = 1080;
-        mDesiredAspectRatio = AspectRatio.of(mDesiredWidth, mDesiredHeight);
         //创建默认的比例.因为后置摄像头的比例，默认的情况下，都是旋转了270
-//        mDesiredAspectRatio = AspectRatio.of(mDesiredWidth, mDesiredHeight).inverse();
+        mDesiredAspectRatio = AspectRatio.of(mDesiredWidth, mDesiredHeight).inverse();
     }
 
     @Override
@@ -99,16 +97,16 @@ public class CameraApi14 implements ICamera {
         CameraSize previewSize;
         mPreviewSize = new CameraSize(mDesiredWidth, mDesiredHeight);
         if (mCameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
-            previewSize = new CameraSize(mDesiredHeight, mDesiredWidth);
-//            mCameraParameters.setRotation(90);
+            mPreviewSize = new CameraSize(mDesiredHeight, mDesiredWidth);
+            mCameraParameters.setRotation(90);
         } else {
-            previewSize = mPreviewSize;
+//            previewSize = mPreviewSize;
         }
 
         //默认去取最大的尺寸
         mPicSize = pictureSizes.sizes(mDesiredAspectRatio).last();
 
-        mCameraParameters.setPreviewSize(previewSize.getWidth(), previewSize.getHeight());
+        mCameraParameters.setPreviewSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         mCameraParameters.setPictureSize(mPicSize.getWidth(), mPicSize.getHeight());
 
         //设置对角和闪光灯
@@ -120,6 +118,7 @@ public class CameraApi14 implements ICamera {
 //        mCameraParameters.setRotation(90);
         mCamera.setParameters(mCameraParameters);
 //        mCamera.setDisplayOrientation(90);
+//        setCameraDisplayOrientation();
     }
 
     private boolean setAutoFocusInternal(boolean autoFocus) {
@@ -188,5 +187,15 @@ public class CameraApi14 implements ICamera {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public CameraSize getPreviewSize() {
+        return mPreviewSize;
+    }
+
+    @Override
+    public CameraSize getPictureSize() {
+        return mPicSize;
     }
 }

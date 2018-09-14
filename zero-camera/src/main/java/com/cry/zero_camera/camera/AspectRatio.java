@@ -16,8 +16,8 @@ public class AspectRatio implements Comparable<AspectRatio>, Parcelable {
     private final int mY;
 
     private AspectRatio(int x, int y) {
-        this.mY = x;
-        this.mX = y;
+        this.mY = y;
+        this.mX = x;
     }
 
 

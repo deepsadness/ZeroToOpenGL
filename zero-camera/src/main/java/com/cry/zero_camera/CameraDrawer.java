@@ -20,7 +20,7 @@ import javax.microedition.khronos.opengles.GL10;
 public class CameraDrawer implements GLSurfaceView.Renderer {
     private final OesFilter mOesFilter;
     //相机的id
-    private int mCameraId = 1;
+    private int mCameraId = 0;
     //相机输出的surfaceView
     private SurfaceTexture mSurfaceTexture;
     //绘制的纹理ID
@@ -41,12 +41,6 @@ public class CameraDrawer implements GLSurfaceView.Renderer {
 
     public SurfaceTexture getSurfaceTexture() {
         return mSurfaceTexture;
-    }
-
-    public void setPreviewSize(int previewWidth, int previewHeight) {
-        this.mPreviewWidth = previewWidth;
-        this.mPreviewHeight = previewHeight;
-        calculateMatrix();
     }
 
     @Override
@@ -109,5 +103,15 @@ public class CameraDrawer implements GLSurfaceView.Renderer {
             mSurfaceTexture.updateTexImage();
         }
         mOesFilter.draw();
+    }
+
+    public void setCameraId(int cameraId) {
+        this.mCameraId = cameraId;
+    }
+
+    public void setPreviewSize(int previewWidth, int previewHeight) {
+        this.mPreviewWidth = previewWidth;
+        this.mPreviewHeight = previewHeight;
+        calculateMatrix();
     }
 }
