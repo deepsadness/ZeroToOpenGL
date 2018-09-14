@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">zero-camera</string>
+    <string name="title_activity_camera">CameraActivity</string>
+</resources>
