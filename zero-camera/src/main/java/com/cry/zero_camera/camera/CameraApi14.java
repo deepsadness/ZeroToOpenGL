@@ -2,10 +2,12 @@ package com.cry.zero_camera.camera;
 
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.util.Log;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * for api 14
@@ -21,6 +23,8 @@ import java.util.SortedSet;
  * 2. 因为预览图是 通过SurfaceTextureView 中显示。可以设置matrix来控制它的旋转。  如这里是手动去控制纹理的绘制的话，则可以自己控制viewMatrix来控制
  */
 public class CameraApi14 implements ICamera {
+    private static final String TAG = "CameraApi14";
+
     /*
     当前的相机Id
      */
@@ -45,6 +49,8 @@ public class CameraApi14 implements ICamera {
      * 当前相机的高宽比
      */
     private AspectRatio mDesiredAspectRatio;
+    private AtomicBoolean isPictureCaptureInProgress = new AtomicBoolean(false);
+    private TakePhotoCallback photoCallBack;
 
 
     public CameraApi14() {
@@ -128,23 +134,35 @@ public class CameraApi14 implements ICamera {
             // TODO: 2018/9/14 这里应该抛出异常？
             return;
         }
-        //当前先不考虑Orientation
-        mPreviewSize = sizes.first();
-//        mPreviewSize = new CameraSize(mDesiredWidth, mDesiredHeight);
-//        if (mCameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
-////            mPreviewSize = new CameraSize(mDesiredHeight, mDesiredWidth);
-////            mCameraParameters.setRotation(90);
-//        } else {
-////            previewSize = mPreviewSize;
-//        }
-        //默认去取最大的尺寸
-        mPicSize = pictureSizes.sizes(mDesiredAspectRatio).first();
+        for (CameraSize next : sizes) {
+            if (next.getWidth() >= 720 && next.getHeight() >= 720) {
+                mPreviewSize = next;
+                break;
+            }
+        }
+        if (mPreviewSize == null) {
+            mPreviewSize = sizes.last();
+        }
+
+//
+        for (CameraSize next : pictureSizes.sizes(mDesiredAspectRatio)) {
+            if (next.getWidth() >= 720 && next.getHeight() >= 720) {
+                mPicSize = next;
+                break;
+            }
+        }
+        if (mPicSize == null) {
+            mPicSize = pictureSizes.sizes(mDesiredAspectRatio).last();
+        }
 
         mCameraParameters.setPreviewSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         mCameraParameters.setPictureSize(mPicSize.getWidth(), mPicSize.getHeight());
 
         mPreviewSize = mPreviewSize.inverse();
         mPicSize = mPicSize.inverse();
+
+        Log.d(TAG, "preview=" + mPreviewSize);
+        Log.d(TAG, "mPicSize=" + mPicSize);
         //设置对角和闪光灯
         setAutoFocusInternal(mAutoFocus);
         //先不设置闪光灯
@@ -233,5 +251,42 @@ public class CameraApi14 implements ICamera {
     @Override
     public CameraSize getPictureSize() {
         return mPicSize;
+    }
+
+    @Override
+    public void takePhoto(TakePhotoCallback callback) {
+        this.photoCallBack = callback;
+        if (getAutoFocus()) {
+            mCamera.cancelAutoFocus();
+            mCamera.autoFocus((success, camera) -> takePictureInternal());
+        } else {
+            takePictureInternal();
+        }
+
+    }
+
+    private void takePictureInternal() {
+        if (!isPictureCaptureInProgress.getAndSet(true)) {
+            final long start = System.currentTimeMillis();
+            mCamera.takePicture(null, null, null, new Camera.PictureCallback() {
+                @Override
+                public void onPictureTaken(byte[] data, Camera camera) {
+                    long end = System.currentTimeMillis();
+                    Log.d(TAG, "mCamera.takePicture cost = " + (end - start));
+                    isPictureCaptureInProgress.set(false);
+                    if (photoCallBack != null) {
+                        photoCallBack.onTakePhoto(data, mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                    }
+                    camera.cancelAutoFocus();
+                    camera.startPreview();
+                }
+            });
+        }
+    }
+
+    //判断是否自动对焦
+    private boolean getAutoFocus() {
+        String focusMode = mCameraParameters.getFocusMode();
+        return focusMode != null && focusMode.contains("continuous");
     }
 }

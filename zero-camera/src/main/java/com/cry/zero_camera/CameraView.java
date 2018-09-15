@@ -4,10 +4,13 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.util.Log;
 
 import com.cry.zero_camera.camera.CameraApi14;
 import com.cry.zero_camera.camera.CameraSize;
 import com.cry.zero_camera.camera.ICamera;
+
+import java.nio.ByteBuffer;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -16,11 +19,14 @@ import javax.microedition.khronos.opengles.GL10;
  * 创建一个OpenGL环境。在这里创建Camera 和 Camera输出的SurfaceView
  */
 public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer {
-//    private IAiyaCamera mCameraApi;
+    private static final String TAG = "CameraView";
+    //    private IAiyaCamera mCameraApi;
     private ICamera mCameraApi;
-//    private int mCameraIdDefault = Camera.CameraInfo.CAMERA_FACING_BACK;
+    //    private int mCameraIdDefault = Camera.CameraInfo.CAMERA_FACING_BACK;
     private int mCameraIdDefault = 0;
     private CameraDrawer mCameraDrawer;
+    private int width;
+    private int height;
 
     public CameraView(Context context) {
         super(context);
@@ -76,6 +82,8 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
         mCameraDrawer.onSurfaceChanged(gl, width, height);
         //设置ViewPort是必须要做的
         GLES20.glViewport(0, 0, width, height);
+        this.width = width;
+        this.height = height;
     }
 
     @Override
@@ -87,5 +95,32 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
     public void onPause() {
         super.onPause();
         mCameraApi.close();
+    }
+
+    int takePhotoFromGL = 0;
+
+    public void takePhoto(ICamera.TakePhotoCallback callback) {
+        if (takePhotoFromGL != 1) {
+            if (mCameraApi != null) {
+                float[] mtx = new float[16];
+                mCameraDrawer.getSurfaceTexture().getTransformMatrix(mtx);
+                mCameraApi.takePhoto(callback);
+            }
+        } else {
+            //直接使用OpenGL的方式
+            queueEvent(() -> {
+                //发送到GLThread中进行
+                //这里传递的长宽。其实就是openGL surface的长款，一定要注意了！！
+                ByteBuffer rgbaBuf = ByteBuffer.allocateDirect(width * height * 4);
+                rgbaBuf.position(0);
+                long start = System.nanoTime();
+                GLES20.glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE,
+                        rgbaBuf);
+                long end = System.nanoTime();
+                Log.d(TAG, "gl glReadPixels cost = " + (end - start));
+                callback.onTakePhoto(rgbaBuf.array(), width, height);
+            });
+        }
+
     }
 }

@@ -1,10 +1,6 @@
 package com.cry.zero_camera.camera;
 
 import android.graphics.SurfaceTexture;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.support.annotation.NonNull;
-import android.support.v4.util.SparseArrayCompat;
 
 /**
  * 定义个相机的功能接口
@@ -37,5 +33,20 @@ public interface ICamera {
     void setPreviewTexture(SurfaceTexture surfaceTexture);
 
     CameraSize getPreviewSize();
+
     CameraSize getPictureSize();
+
+    /**
+     * 添加拍照的功能
+     *
+     * @param callback
+     */
+    void takePhoto(TakePhotoCallback callback);
+
+    /**
+     * 通过回调，将对应的数据传递回去
+     */
+    interface TakePhotoCallback {
+        void onTakePhoto(byte[] bytes, int width, int height);
+    }
 }
