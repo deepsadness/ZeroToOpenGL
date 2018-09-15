@@ -1,6 +1,6 @@
 ## 整体流程理解
 ---
-![image.png](https://github.com/deepsadness/ZeroToOpenGL/art/camera_with_opengl.png)
+![image.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/camera_with_opengl.png)
 
 1. 将`Camera`中得到的`ImageStream`由`SurfaceTexture`接受，并转换成`OpenGL ES`纹理。
 2. 创建`GLSurfaceView`。在`OpenGL`环境下,用`GLSurfaceView.Render`将这个纹理绘制出来。
