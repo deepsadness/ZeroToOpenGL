@@ -9,7 +9,8 @@
         <activity
             android:name=".CameraActivity"
             android:label="@string/title_activity_camera"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity android:name=".CameraCaptureActivity" />
     </application>
 
 </manifest>

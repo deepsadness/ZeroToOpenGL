@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import com.cry.zero_camera.CameraActivity;
+import com.cry.zero_camera.CameraCaptureActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -17,5 +18,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void ToZeroCamera(View view) {
         startActivity(new Intent(this, CameraActivity.class));
+    }
+
+    public void ToZeroCameraCapture(View view) {
+        startActivity(new Intent(this, CameraCaptureActivity.class));
     }
 }

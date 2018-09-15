@@ -18,17 +18,17 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * 创建一个OpenGL环境。在这里创建Camera 和 Camera输出的SurfaceView
  */
-public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer {
+public class CameraCaptureView extends GLSurfaceView implements GLSurfaceView.Renderer {
     private static final String TAG = "CameraView";
     //    private IAiyaCamera mCameraApi;
     private ICamera mCameraApi;
     //    private int mCameraIdDefault = Camera.CameraInfo.CAMERA_FACING_BACK;
     private int mCameraIdDefault = 0;
-    private CameraDrawer mCameraDrawer;
+    private CameraRender mCameraRender;
     private int width;
     private int height;
 
-    public CameraView(Context context) {
+    public CameraCaptureView(Context context) {
         super(context);
         initEGL();
         initCameraApi(context);
@@ -46,15 +46,15 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
     private void initCameraApi(Context context) {
 //        mCameraApi = new KitkatCamera();
         mCameraApi = new CameraApi14();
-        mCameraDrawer = new CameraDrawer(context.getResources());
+        mCameraRender = new CameraRender(context.getResources());
     }
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        mCameraDrawer.onSurfaceCreated(gl, config);
+        mCameraRender.onSurfaceCreated(gl, config);
 
         mCameraApi.open(mCameraIdDefault);
-        mCameraDrawer.setCameraId(mCameraIdDefault);
+        mCameraRender.setCameraId(mCameraIdDefault);
 
 
         CameraSize previewSize = mCameraApi.getPreviewSize();
@@ -65,11 +65,11 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
 //        int previewSizeWidth = previewSize.x;
 //        int previewSizeHeight = previewSize.y;
 
-        mCameraDrawer.setPreviewSize(previewSizeWidth, previewSizeHeight);
+        mCameraRender.setPreviewSize(previewSizeWidth, previewSizeHeight);
 
-        mCameraApi.setPreviewTexture(mCameraDrawer.getSurfaceTexture());
+        mCameraApi.setPreviewTexture(mCameraRender.getSurfaceTexture());
         //默认使用的GLThread.每次刷新的时候，都强制要求是刷新这个GLSurfaceView
-        mCameraDrawer.getSurfaceTexture().setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+        mCameraRender.getSurfaceTexture().setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
             @Override
             public void onFrameAvailable(SurfaceTexture surfaceTexture) {
                 requestRender();
@@ -80,7 +80,7 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        mCameraDrawer.onSurfaceChanged(gl, width, height);
+        mCameraRender.onSurfaceChanged(gl, width, height);
         //设置ViewPort是必须要做的
         GLES20.glViewport(0, 0, width, height);
         this.width = width;
@@ -89,13 +89,21 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        mCameraDrawer.onDrawFrame(gl);
+        mCameraRender.onDrawFrame(gl);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         mCameraApi.close();
+
+        queueEvent(new Runnable() {
+            @Override public void run() {
+                // Tell the renderer that it's about to be paused so it can clean up.
+                mCameraRender.notifyPausing();
+            }
+        });
+        Log.d(TAG, "onPause complete");
     }
 
     int takePhotoFromGL = 0;
@@ -104,7 +112,7 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
         if (takePhotoFromGL != 1) {
             if (mCameraApi != null) {
                 float[] mtx = new float[16];
-                mCameraDrawer.getSurfaceTexture().getTransformMatrix(mtx);
+                mCameraRender.getSurfaceTexture().getTransformMatrix(mtx);
                 mCameraApi.takePhoto(callback);
             }
         } else {
@@ -123,5 +131,12 @@ public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer 
             });
         }
 
+    }
+
+    public void changeRecordingState(boolean mRecordingEnabled) {
+        queueEvent(() -> {
+            // notify the renderer that we want to change the encoder's state
+            mCameraRender.changeRecordingState(mRecordingEnabled);
+        });
     }
 }
