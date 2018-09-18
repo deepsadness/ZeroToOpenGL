@@ -11,6 +11,7 @@
             android:label="@string/title_activity_camera"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".CameraCaptureActivity" />
+        <activity android:name=".CameraCaptureFilterActivity" />
     </application>
 
 </manifest>

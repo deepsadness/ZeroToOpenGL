@@ -7,6 +7,7 @@ import android.view.View;
 
 import com.cry.zero_camera.CameraActivity;
 import com.cry.zero_camera.CameraCaptureActivity;
+import com.cry.zero_camera.CameraCaptureFilterActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -22,5 +23,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void ToZeroCameraCapture(View view) {
         startActivity(new Intent(this, CameraCaptureActivity.class));
+    }
+
+    public void ToZeroCameraCaptureFilter(View view) {
+        startActivity(new Intent(this, CameraCaptureFilterActivity.class));
     }
 }
