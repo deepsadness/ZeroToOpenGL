@@ -1,4 +1,4 @@
-![cover.png](https://upload-images.jianshu.io/upload_images/1877190-a134d64bb566ee05.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![cover.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/cover.png)
 
 
 上文中我们已经实现了在纹理上添加滤镜的效果。这编文章就是将OpenGl和相机结合到一起。
@@ -6,7 +6,7 @@
 ## 预览与拍照
 ### 整体流程理解 
 
-![预览的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-5849161f9588f95f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![预览的整体流程.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/process1.png)
 
 1. 将`Camera`中得到的`ImageStream`由`SurfaceTexture`接受，并转换成`OpenGL ES`纹理。
 2. 创建`GLSurfaceView`。在`OpenGL`环境下,用`GLSurfaceView.Render`将这个纹理绘制出来。
@@ -514,7 +514,7 @@ public void draw() {
 ## 录制
 ### 整体流程理解 
 
-![录制的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-928ba344a7b36d8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![录制的整体流程.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/process_encoder.png)
 
 在原来预览的基础上，我们需要加入`MediaCodec`进行视频编码。
 0. 图中的`EglCore`着保存`EglContext`。`EglSurface`和`EglConfig`的配置。`WindowSurface`就是将`EglContext`和`Surface`相互关联的帮助类。
@@ -936,11 +936,11 @@ mVideoEncoder.frameAvailable(mSurfaceTexture);
 
 ## 添加滤镜
 ### 整体流程理解 
-![添加滤镜后的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-be65971711ceba01.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![添加滤镜后的整体流程.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/process_filter.png)
 
 上面，我们是直接绘制OES的纹理。这里，因为要添加滤镜的效果。所以我们需要将纹理进行处理。
 #### 离屏绘制
-![离屏绘制.png](https://upload-images.jianshu.io/upload_images/1877190-3ebb3fd62abc2a3f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![离屏绘制.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/process-offscreen-render.png)
 先将`OES`纹理，绑定到`FrameBuffer`上。同时会在`FrameBuffer`上绑定一个新的`textureId`(这里命名为`OffscreenTextureId`)。然后调用绘制`OES`纹理的方法，数据就会传递到`FBO`上。而我们可以通过绑定在其上的`OffscreenTextureId`得到其数据。通常情况下，我们把绑定`FrameBuffer`和绘制这个新的`OffscreenTextureId`代表的纹理的过程，称为离屏绘制。
 ##### 绑定和生成`FrameBuffer`的时机
 创建`FrameBuffer`。因为RenderBuffer的存储大小要和当前的显示的宽和高相关。所以会在`onSurfaceChanged`生命周期方法时候调用。
@@ -1020,11 +1020,11 @@ mVideoEncoder.frameAvailable(mSurfaceTexture);
 ```
 
 - `FrameBuffer` 帧缓冲对象
-![openGL绘制流程.png](https://upload-images.jianshu.io/upload_images/1877190-54ea7869648d0ce6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![openGL绘制流程.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/opengl_draw_process.png)
 
 我们自己创建的FrameBuffer其实只是一个容器。所以我们要将数据挂载上去，它才算是完整。
 
-![FrameBuffer.png](https://upload-images.jianshu.io/upload_images/1877190-a6a492aaca634780.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![FrameBuffer.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/frameBuffer.png)
 
 所以，我们可以看到申请FrameBuffer需要进行下面的三步
 1. 生成一个FrameBuffer
@@ -1038,7 +1038,7 @@ mVideoEncoder.frameAvailable(mSurfaceTexture);
 我们就可以通过这个纹理，得到保存在`FBO`上的数据了
 
 ##### 添加滤镜的绘制
-![添加滤镜.png](https://upload-images.jianshu.io/upload_images/1877190-c5ec2d840583b5c4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![添加滤镜.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/process-add-filter.png)
 
 我们可以通过`FBO`，进行滤镜处理。我们将得到的数据，再次进行绘制，在这次的绘制中，我们就可以添加上我们想要的滤镜处理了。
 
@@ -1064,7 +1064,7 @@ mVideoEncoder.frameAvailable(mSurfaceTexture);
 ```
 
 ##### 将应用了滤镜的纹理分别绘制到`GLView`和`Encoder`当中
-![image.png](https://upload-images.jianshu.io/upload_images/1877190-a80ef8c8bce4ddb4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/process-draw-display-encoder.png)
 
 ```java
 @Override
