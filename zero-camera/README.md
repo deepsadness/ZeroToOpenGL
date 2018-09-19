@@ -1,6 +1,11 @@
-## 整体流程理解
+![cover.png](https://upload-images.jianshu.io/upload_images/1877190-87d9a30420e712e1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+上文中我们已经实现了在纹理上添加滤镜的效果。这编文章就是将OpenGl和相机结合到一起。
+
+## 预览与拍照
+### 整体流程理解 
 ---
-![image.png](https://github.com/deepsadness/ZeroToOpenGL/blob/master/art/camera_with_opengl.png)
+![预览的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-5849161f9588f95f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 1. 将`Camera`中得到的`ImageStream`由`SurfaceTexture`接受，并转换成`OpenGL ES`纹理。
 2. 创建`GLSurfaceView`。在`OpenGL`环境下,用`GLSurfaceView.Render`将这个纹理绘制出来。
@@ -9,13 +14,11 @@
 Camera ==>SurfaceTexture==>texture(samplerExternalOES) ==>draw to GLSurfaceView
 ```
 
-
-
-## 各个部分详解
+### 各个部分详解
 ---
-### Camra Api
+#### Camra Api
 首先是相机的Api的书写。
-#### Camera Interface
+##### Camera Interface
 为我们相机的操作定义一个接口。因为我们的相机Api。有Camera2和Camera的区别。这里还是简单的使用Camera来完成。
 
 ```java
@@ -54,7 +57,7 @@ public interface ICamera {
 }
 ```
 定义一个相机的接口。我们知道。我们需要相机做的几个通常的操作。
-#### CameraApi14
+##### CameraApi14
 ```java
 /**
  * for api 14
@@ -295,7 +298,7 @@ public class CameraApi14 implements ICamera {
 设备坐标和纹理坐标之间的方向不同问题，由后面纹理的矩阵来控制就好了。
 
 ---
-### SurfaceTexture
+#### SurfaceTexture
 可以从图像流中捕获帧作为`OpenGL ES`纹理。
 1. 直接使用创建的纹理，来创建SurfaceTexture就可以了。
 ```java
@@ -312,7 +315,7 @@ mSurfaceTexture = new SurfaceTexture(mTextureId);
             }
         });
 ```
-#### 注意事项
+##### 注意事项
 使用时必须要注意的是
 1. **纹理对象使用`GL_TEXTURE_EXTERNAL_OES`纹理目标，该目标由[GL_OES_EGL_image_external](http://www.khronos.org/registry/gles/extensions/OES/OES_EGL_image_external.txt)OpenGL ES扩展定义。**
 每次绑定纹理时，它必须绑定到`GL_TEXTURE_EXTERNAL_OES`目标而不是`GL_TEXTURE_2D`目标。在OpenGL ES 2.0着色器必须使用
@@ -326,8 +329,8 @@ uniform samplerExternalOES uTexture;
 
 
 ---
-### GLSurfaceView.Render
-#### GLSL部分
+#### GLSurfaceView.Render
+##### GLSL部分
 - **oes_base_vertex.glsl**
 ```glsl
 attribute vec4 aPosition;
@@ -359,9 +362,9 @@ void main() {
     gl_FragColor = texture2D(uTexture,vTextureCoordinate);
 }
 ```
-#### 其他的部分
+##### 其他的部分
 其他的部分和前几编文章中提到的相差不多。
-##### 0. 生成纹理
+###### 0. 生成纹理
 这里就是上面所说的。**只能用`GLES11Ext.GL_TEXTURE_EXTERNAL_OES`这种纹理。**
 ```java
  private int genOesTextureId() {
@@ -381,7 +384,7 @@ void main() {
         return textureObjectId[0];
     }
 ```
-##### 1. 视图矩阵。
+###### 1. 视图矩阵。
 因为设备坐标和纹理的坐标不同。而前置摄像头和后置摄像头的翻转的方向也不同。所以要做下面的处理
 ```java
    //计算需要变化的矩阵
@@ -423,8 +426,8 @@ void main() {
 如果是前置摄像头的话，需要进行左右的翻转。然后旋转90度。
 后置摄像头的话，只需要旋转270度就可以了。
 
-##### 2. 绘制图形
-**重温一下绘制整体的流程**
+###### 2. 绘制图形
+**重温一下绘制整体的流程** 
 ```java
 //draw step
 public void draw() {
@@ -504,12 +507,592 @@ public void draw() {
         GLES20.glDisableVertexAttribArray(mACoord);
     }
 ```
----
-### GLSurfaceView
+--- 
+#### GLSurfaceView
 最后在GLSurfaceView的对应的生命周期内调用方法就可以了~~
 
+## 录制
+### 整体流程理解 
+---
+![录制的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-928ba344a7b36d8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+在原来预览的基础上，我们需要加入`MediaCodec`进行视频编码。
+0. 图中的`EglCore`着保存`EglContext`。`EglSurface`和`EglConfig`的配置。`WindowSurface`就是将`EglContext`和`Surface`相互关联的帮助类。
+1. `Encoder`是在`EncoderThread`中进行。两个线程(和原来的`GLTHread`)需要共享`EGLContext`。
+2. 使用`MediaCodec`进行视频编码，只要通过它的`InputSurface`，将数据输入就可以。所以通过共享的`EGLContext`，来创建一个`WindowSurface`。然后再通过在该线程内GL的`draw`方法，就可以将`EGLContext`中的Oes纹理，绘制到`Surface`上。这样`MediaCodec`就可以得到数据。
+
+3. **整体流向** 
+当我们接受到frame时，我们需要
+- 在`GLSurfaceView`的渲染线程,将数据渲染到`SurfaceView`
+- 在`Encoder`的线程，将`frame`渲染到`Mediacodec`的`InputSurface`中
+```
+Camera==>
+  SurfaceTexture.onFrameAvailable==>
+  GLSurfaceView.requestRender ==>
+  {
+    //通知更新下一帧
+    mSurfaceTexture.updateTexImage()
+    //在`Encoder`的线程，将`frame`渲染到`Mediacodec`的`InputSurface`中。通知编码器线程绘制并编码
+    mVideoEncoder.frameAvailable(mSurfaceTexture) ==>
+      {
+        //通知编码器进行编码
+        mVideoEncoder.drainEncoder(false);
+        //刷入数据
+        mFullScreen.drawFrame(mTextureId, transform);
+        //给InputWindow设置时间戳
+        mInputWindowSurface.setPresentationTime(timestampNanos);
+        //刷新之后，编码器得到数据？
+        mInputWindowSurface.swapBuffers();
+      }
+    //同时Render绘制到屏幕上。在`GLSurfaceView`的渲染线程,将数据渲染到`SurfaceView`
+    mOesFilter.draw();
+  }
+
+```
+### 各个部分详解
+---
+#### TextureMovieEncoder
+主要还是添加了一个这个类。
+> 理想状态下，我们创建Video Encoder，然后为它创建EGLContext，然后将这个context传入GLSurfaceView来共享。 但是这里的Api做不到这样，所以我们只能反着来。当GLSurfaceView torn down时，（可能时我们旋转了屏幕），EGLContext也会同样被抛弃。这样意味这当它回来的时候，我们就需要重新为Video encoder创建EGLContext.(而且，"preserve EGLContext on pause" 这样的功能，也不启作用。就是上一个暂停状态的EGLContext，在这里也不能用)我们可以通过使用TextureView 来替代GLSurfaceView来做一些简化。但是这样会由一点性能的问题。
+
+##### 创建EGL环境
+###### 获取`EGLContext`
+可以直接在`GLThread`中通过`EGL14.eglGetCurrentContext()`,就可以得到和线程绑定的`EGLContext`(`EGLContext`其实也是存在于`ThreadLocal`当中)
+```java
+ private void startRecord() {
+        mOutputFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "camera-test" + System.currentTimeMillis() + ".mp4");
+        Log.d(TAG, "file path = " + mOutputFile.getAbsolutePath());
+        // start recording
+        mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
+                mOutputFile, mPreviewHeight, mPreviewWidth, 1000000, EGL14.eglGetCurrentContext()));
+        mRecordingStatus = RECORDING_ON;
+    }
+```
+###### 线程的通信是通过`Handler`来完成。
+```java
+public void startRecording(EncoderConfig config) {
+        Log.d(TAG, "Encoder: startRecording()");
+        //mReadyFence 这个锁是来锁这个线程的所有操作的。包括开始。停止。绘制。
+        synchronized (mReadyFence) {
+            if (mRunning) {
+                Log.w(TAG, "Encoder thread already running");
+                return;
+            }
+            mRunning = true;
+            new Thread(this, "TextureMovieEncoder").start();
+            while (!mReady) {
+                try {
+                    mReadyFence.wait();
+                } catch (InterruptedException ie) {
+                    // ignore
+                }
+            }
+        }
+
+        mHandler.sendMessage(mHandler.obtainMessage(MSG_START_RECORDING, config));
+    }
+```
+###### 创建`WindowSurface`。将`EGLContext`和`Encoder.InputSurface`关联在一起
+```java
+ private void prepareEncoder(EGLContext sharedContext, int width, int height, int bitRate,
+                                File outputFile) {
+        try {
+            //这个就算MediaCodec的封装。包括MediaCodec进行编码。MediaMuxer进行视频封装
+            mVideoEncoder = new VideoEncoderCore(width, height, bitRate, outputFile);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        //通过EglContext创建EglCore
+        mEglCore = new EglCore(sharedContext, EglCore.FLAG_RECORDABLE);
+        //创建inputWindowSurface
+        mInputWindowSurface = new WindowSurface(mEglCore, mVideoEncoder.getInputSurface(), true);
+        //在完成EGL的初始化之后,需要通过eglMakeCurrent()函数来将当前的上下文切换,这样opengl的函数才能启动作用。
+        mInputWindowSurface.makeCurrent();
+
+        mFullScreen = new FullFrameRect(
+                new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT));
+    }
+```
+这里进行了一系列的初始化工作。
+- 初始化了`VideoEncoderCore`。它是`MediaCodec`和`MediaMuxer`的封装。
+```java
+public VideoEncoderCore(int width, int height, int bitRate, File outputFile)
+            throws IOException {
+        //MediaCodec的BufferInfo的缓存。通过这个BufferInfo不断的运输数据。（原始=>编码后的）
+        mBufferInfo = new MediaCodec.BufferInfo();
+        //创建MediaFormat MIME_TYPE = "video/avc"
+        MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
+
+        //设置我们想要的参数。如果参数不合法的话，在configure时，就会报错的
+        //这个ColorFormat很重要，这里一定要设置COLOR_FormatSurface
+        format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
+                MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
+        //这里的设置5 seconds 在相邻的 I-frames，why?
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
+        if (VERBOSE) Log.d(TAG, "format: " + format);
+
+        //创建编码器
+        mEncoder = MediaCodec.createEncoderByType(MIME_TYPE);
+        mEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+        //得到对应InputSureface
+        mInputSurface = mEncoder.createInputSurface();
+        //启动
+        mEncoder.start();
+
+        //创建MediaMuxer。我们不能直接在这里开始muxer.因为MediaFormat 还没得到输入。必须要在编码器得到输入之后，才能添加。这里先不添加音频。
+        mMuxer = new MediaMuxer(outputFile.toString(),
+                MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+
+        mTrackIndex = -1;
+        mMuxerStarted = false;
+    }
+```
+- 初始化了`EglCore`。主要是管理EGL的state，包括 (display, context, config)。
+```java
+  //主要是初始化display 和EglContext
+  public EglCore(EGLContext sharedContext, int flags) {
+        if (mEGLDisplay != EGL14.EGL_NO_DISPLAY) {
+            throw new RuntimeException("EGL already set up");
+        }
+
+        if (sharedContext == null) {
+            sharedContext = EGL14.EGL_NO_CONTEXT;
+        }
+        //先创建一个默认的Display
+        mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
+        if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
+            throw new RuntimeException("unable to get EGL14 display");
+        }
+        //检查是否创建成功
+        int[] version = new int[2];
+        if (!EGL14.eglInitialize(mEGLDisplay, version, 0, version, 1)) {
+            mEGLDisplay = null;
+            throw new RuntimeException("unable to initialize EGL14");
+        }
+
+        // Try to get a GLES3 context, if requested.
+        if ((flags & FLAG_TRY_GLES3) != 0) {
+            //Log.d(TAG, "Trying GLES 3");
+            EGLConfig config = getConfig(flags, 3);
+            if (config != null) {
+                int[] attrib3_list = {
+                        EGL14.EGL_CONTEXT_CLIENT_VERSION, 3,
+                        EGL14.EGL_NONE
+                };
+                EGLContext context = EGL14.eglCreateContext(mEGLDisplay, config, sharedContext,
+                        attrib3_list, 0);
+
+                if (EGL14.eglGetError() == EGL14.EGL_SUCCESS) {
+                    //Log.d(TAG, "Got GLES 3 config");
+                    mEGLConfig = config;
+                    mEGLContext = context;
+                    mGlVersion = 3;
+                }
+            }
+        }
+        if (mEGLContext == EGL14.EGL_NO_CONTEXT) {  // GLES 2 only, or GLES 3 attempt failed
+            //Log.d(TAG, "Trying GLES 2");
+            //获取GL的Config
+            EGLConfig config = getConfig(flags, 2);
+            if (config == null) {
+                throw new RuntimeException("Unable to find a suitable EGLConfig");
+            }
+            int[] attrib2_list = {
+                    EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
+                    EGL14.EGL_NONE
+            };
+            //获取EGLContext关键方法就是它，EGL14.eglCreateContext
+            EGLContext context = EGL14.eglCreateContext(mEGLDisplay, config, sharedContext,
+                    attrib2_list, 0);
+            checkEglError("eglCreateContext");
+            mEGLConfig = config;
+            mEGLContext = context;
+            mGlVersion = 2;
+        }
+
+        // Confirm with query.
+        int[] values = new int[1];
+        EGL14.eglQueryContext(mEGLDisplay, mEGLContext, EGL14.EGL_CONTEXT_CLIENT_VERSION,
+                values, 0);
+        Log.d(TAG, "EGLContext created, client version " + values[0]);
+    }
+    
+    //EGL的配置。类似键值对的数组。
+   private EGLConfig getConfig(int flags, int version) {
+        int renderableType = EGL14.EGL_OPENGL_ES2_BIT;
+        if (version >= 3) {
+            renderableType |= EGLExt.EGL_OPENGL_ES3_BIT_KHR;
+        }
+
+        // The actual surface is generally RGBA or RGBX, so situationally omitting alpha
+        // doesn't really help.  It can also lead to a huge performance hit on glReadPixels()
+        // when reading into a GL_RGBA buffer.
+        int[] attribList = {
+                EGL14.EGL_RED_SIZE, 8,
+                EGL14.EGL_GREEN_SIZE, 8,
+                EGL14.EGL_BLUE_SIZE, 8,
+                EGL14.EGL_ALPHA_SIZE, 8,
+                //EGL14.EGL_DEPTH_SIZE, 16,
+                //EGL14.EGL_STENCIL_SIZE, 8,
+                EGL14.EGL_RENDERABLE_TYPE, renderableType,
+                EGL14.EGL_NONE, 0,      // placeholder for recordable [@-3]
+                EGL14.EGL_NONE
+        };
+        if ((flags & FLAG_RECORDABLE) != 0) {
+            attribList[attribList.length - 3] = EGL_RECORDABLE_ANDROID;
+            attribList[attribList.length - 2] = 1;
+        }
+        EGLConfig[] configs = new EGLConfig[1];
+        int[] numConfigs = new int[1];
+        if (!EGL14.eglChooseConfig(mEGLDisplay, attribList, 0, configs, 0, configs.length,
+                numConfigs, 0)) {
+            Log.w(TAG, "unable to find RGB8888 / " + version + " EGLConfig");
+            return null;
+        }
+        return configs[0];
+    }
+```
+- 初始化了`WindowSurface`。并通过eglMakeCurrent（）函数，切换到当前的上下文。
+```java
+    /**
+     * 将EGL和原生的window surface关联在一起
+     * 如果传入releaseSurface为true的话，当你调用release方法时，这个Surface就会自动被release。
+     * 但时如果是使用了SurfaceView的Surface等，Android框架创建的Surface时需要注意，
+     * 它会干涉原生框架的调用，比如上述的SurfaceView的Surface,release之后，surfaceDestroyed()回调将不会再收到
+     */
+    public WindowSurface(EglCore eglCore, Surface surface, boolean releaseSurface) {
+        super(eglCore);
+        createWindowSurface(surface);
+        mSurface = surface;
+        mReleaseSurface = releaseSurface;
+    }
+    /**
+     * 创建 window surface.我们的之前的信息提前就保存再EglCore内了
+     * <p>
+     * @param surface May be a Surface or SurfaceTexture.
+     */
+    public void createWindowSurface(Object surface) {
+        if (mEGLSurface != EGL14.EGL_NO_SURFACE) {
+            throw new IllegalStateException("surface already created");
+        }
+        mEGLSurface = mEglCore.createWindowSurface(surface);
+    }
+
+    /**
+     * 如果我们是为了MediaCodec创建，那么EGLConfig需要有"recordable"的attribute.这个部分，在上面初始化EglCore时，已经完成了EGLConfig和EGLDisplay的配置
+     */
+    public EGLSurface createWindowSurface(Object surface) {
+        if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture)) {
+            throw new RuntimeException("invalid surface: " + surface);
+        }
+
+        // Create a window surface, and attach it to the Surface we received.
+        int[] surfaceAttribs = {
+                EGL14.EGL_NONE
+        };
+        //这就是我们想要的EGLSurface的创建方式  EGL14.eglCreateWindowSurface
+        EGLSurface eglSurface = EGL14.eglCreateWindowSurface(mEGLDisplay, mEGLConfig, surface,
+                surfaceAttribs, 0);
+        checkEglError("eglCreateWindowSurface");
+        if (eglSurface == null) {
+            throw new RuntimeException("surface was null");
+        }
+        return eglSurface;
+    }
+```
+- 初始化`FullFrameRect`。它是OpenGl绘制命令等的封装。
+
+##### frameAvailable
+在接受到`Frame`时，进行编码
+```java
+mVideoEncoder.frameAvailable(mSurfaceTexture);
+```
+- 时间戳和tranfrom矩阵
+```java
+  float[] transform = new float[16];      // TODO - avoid alloc every frame
+        st.getTransformMatrix(transform);
+        long timestamp = st.getTimestamp();
+        if (timestamp == 0) {
+            // Seeing this after device is toggled off/on with power button.  The
+            // first frame back has a zero timestamp.
+            //
+            // MPEG4Writer thinks this is cause to abort() in native code, so it's very
+            // important that we just ignore the frame.
+            Log.w(TAG, "HEY: got SurfaceTexture with timestamp of zero");
+            return;
+        }
+
+        mHandler.sendMessage(mHandler.obtainMessage(MSG_FRAME_AVAILABLE,
+                (int) (timestamp >> 32), (int) timestamp, transform));
+```
+- 编码
+```java
+  private void handleFrameAvailable(float[] transform, long timestampNanos) {
+        if (VERBOSE) Log.d(TAG, "handleFrameAvailable tr=" + transform);
+        //视频编码
+        mVideoEncoder.drainEncoder(false);
+        mFullScreen.drawFrame(mTextureId, transform);
+        //设置时间戳
+        mInputWindowSurface.setPresentationTime(timestampNanos);
+        mInputWindowSurface.swapBuffers();
+    }
+
+  /**
+     * 从encoder中得到数据，再写入到muxer中。
+     * 下面这段代码就是通用的编码的代码了
+     */
+    public void drainEncoder(boolean endOfStream) {
+        final int TIMEOUT_USEC = 10000;
+        if (VERBOSE) Log.d(TAG, "drainEncoder(" + endOfStream + ")");
+        
+        //如果通知编码器结束，就会signalEndOfInputStream
+        if (endOfStream) {
+            if (VERBOSE) Log.d(TAG, "sending EOS to encoder");
+            mEncoder.signalEndOfInputStream();
+        }
+        
+        //得到outputBuffer
+        ByteBuffer[] encoderOutputBuffers = mEncoder.getOutputBuffers();
+        //不断循环，当读取所有数据时
+        while (true) {
+            //上面换成的BufferInfo，送入到Encoder中，去查询状态
+            int encoderStatus = mEncoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
+            //如果时继续等待，就暂时不用处理。大多数情况，都是从这儿跳出循环
+            if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                // no output available yet
+                if (!endOfStream) {
+                    break;      // out of while
+                } else {
+                    if (VERBOSE) Log.d(TAG, "no output available, spinning to await EOS");
+                }
+            //outputBuffer发生变化了。就重新去获取
+            } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+                // not expected for an encoder
+                encoderOutputBuffers = mEncoder.getOutputBuffers();
+            //格式发生变化。这个第一次configure之后也会调用一次。在这里进行muxer的初始化
+            } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                // should happen before receiving buffers, and should only happen once
+                if (mMuxerStarted) {
+                    throw new RuntimeException("format changed twice");
+                }
+                MediaFormat newFormat = mEncoder.getOutputFormat();
+                Log.d(TAG, "encoder output format changed: " + newFormat);
+
+                // now that we have the Magic Goodies, start the muxer
+                mTrackIndex = mMuxer.addTrack(newFormat);
+                mMuxer.start();
+                mMuxerStarted = true;
+            } else if (encoderStatus < 0) {
+                Log.w(TAG, "unexpected result from encoder.dequeueOutputBuffer: " +
+                        encoderStatus);
+                // let's ignore it
+            } else {
+                //写入数据
+                ByteBuffer encodedData = encoderOutputBuffers[encoderStatus];
+                if (encodedData == null) {
+                    throw new RuntimeException("encoderOutputBuffer " + encoderStatus +
+                            " was null");
+                }
+
+                if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                    // The codec config data was pulled out and fed to the muxer when we got
+                    // the INFO_OUTPUT_FORMAT_CHANGED status.  Ignore it.
+                    if (VERBOSE) Log.d(TAG, "ignoring BUFFER_FLAG_CODEC_CONFIG");
+                    mBufferInfo.size = 0;
+                }
+
+                if (mBufferInfo.size != 0) {
+                    if (!mMuxerStarted) {
+                        throw new RuntimeException("muxer hasn't started");
+                    }
+                    //切到对应的位置，进行书写
+                    // adjust the ByteBuffer values to match BufferInfo (not needed?)
+                    encodedData.position(mBufferInfo.offset);
+                    encodedData.limit(mBufferInfo.offset + mBufferInfo.size);
+                    //写入
+                    mMuxer.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
+                    if (VERBOSE) {
+                        Log.d(TAG, "sent " + mBufferInfo.size + " bytes to muxer, ts=" +
+                                mBufferInfo.presentationTimeUs);
+                    }
+                }
+                //重新释放，为了下一次的输入
+                mEncoder.releaseOutputBuffer(encoderStatus, false);
+
+                if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                    //到达最后了，就跳出循环
+                    if (!endOfStream) {
+                        Log.w(TAG, "reached end of stream unexpectedly");
+                    } else {
+                        if (VERBOSE) Log.d(TAG, "end of stream reached");
+                    }
+                    break;      // out of while
+                }
+            }
+        }
+    }
+```
+
+## 添加滤镜
+### 整体流程理解 
+---
+![添加滤镜后的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-be65971711ceba01.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+上编文章，我们是直接绘制OES的纹理。这里，因为要添加滤镜的效果。所以我们需要将纹理进行处理。
+#### 离屏绘制
+![离屏绘制.png](https://upload-images.jianshu.io/upload_images/1877190-3ebb3fd62abc2a3f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+先将`OES`纹理，绑定到`FrameBuffer`上。同时会在`FrameBuffer`上绑定一个新的`textureId`(这里命名为`OffscreenTextureId`)。然后调用绘制`OES`纹理的方法，数据就会传递到`FBO`上。而我们可以通过绑定在其上的`OffscreenTextureId`得到其数据。通常情况下，我们把绑定`FrameBuffer`和绘制这个新的`OffscreenTextureId`代表的纹理的过程，称为离屏绘制。
+##### 绑定和生成`FrameBuffer`的时机
+创建`FrameBuffer`。因为RenderBuffer的存储大小要和当前的显示的宽和高相关。所以会在`onSurfaceChanged`生命周期方法时候调用。
+```java
+    @Override
+    public void onSurfaceChanged(GL10 gl, int width, int height) {
+        //在这里监听到尺寸的改变。做出对应的变化
+        prepareFramebuffer(width, height);
+        //...
+    }
+
+    //生成frameBuffer的时机
+    private void prepareFramebuffer(int width, int height) {
+        int[] values = new int[1];
+        //申请一个与FrameBuffer绑定的textureId
+        GLES20.glGenTextures(1, values, 0);
+        mOffscreenTextureId = values[0];
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mOffscreenTextureId);
+         // Create texture storage.
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0,
+                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+
+        // Set parameters.  We're probably using non-power-of-two dimensions, so
+        // some values may not be available for use.
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER,
+                GLES20.GL_NEAREST);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER,
+                GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S,
+                GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T,
+                GLES20.GL_CLAMP_TO_EDGE);
+
+        //创建FrameBuffer Object并且绑定它
+        GLES20.glGenFramebuffers(1, values, 0);
+        mFrameBuffer = values[0];
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameBuffer);
+
+        // 创建RenderBuffer Object并且绑定它
+        GLES20.glGenRenderbuffers(1, values, 0);
+        mRenderBuffer = values[0];
+        GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, mRenderBuffer);
+
+        //为我们的RenderBuffer申请存储空间
+        GLES20.glRenderbufferStorage(GLES20.GL_RENDERBUFFER, GLES20.GL_DEPTH_COMPONENT16, width, height);
+
+        // 将renderBuffer挂载到frameBuffer的depth attachment 上。就上面申请了OffScreenId和FrameBuffer相关联
+        GLES20.glFramebufferRenderbuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_DEPTH_ATTACHMENT, GLES20.GL_RENDERBUFFER, mRenderBuffer);
+        // 将text2d挂载到frameBuffer的color attachment上
+        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, mOffscreenTextureId, 0);
+
+        // See if GLES is happy with all this.
+        int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
+        if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+            throw new RuntimeException("Framebuffer not complete, status=" + status);
+        }
+        // 先不使用FrameBuffer，将其切换掉。到开始绘制的时候，在绑定回来
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+    }
+    
+    //在onDrawFrame中添加代码
+    @Override
+    public void onDrawFrame(GL10 gl) {
+        //...省略
+
+        //重新切换到FrameBuffer上。
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameBuffer);
+        //这里的绘制，就会将数据挂载到FrameBuffer上了。
+        mOesFilter.draw();
+        //解除绑定，结束FrameBuffer部分的数据写入
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        
+        //....省略
+    }
+
+
+```
+
+- `FrameBuffer` 帧缓冲对象
+![openGL绘制流程.png](https://upload-images.jianshu.io/upload_images/1877190-54ea7869648d0ce6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+我们自己创建的FrameBuffer其实只是一个容器。所以我们要将数据挂载上去，它才算是完整。
+
+![FrameBuffer.png](https://upload-images.jianshu.io/upload_images/1877190-a6a492aaca634780.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+所以，我们可以看到申请FrameBuffer需要进行下面的三步
+1. 生成一个FrameBuffer
+2. 申请一个RenderBuffer,并且挂载`GL_DEPTH_ATTACHMENT`上。
+>`RenderBuffer`也是一个渲染缓冲区对象。`RenderBuffer`对象是新引入的用于离屏渲染。它允许将场景直接渲染到`Renderbuffer`对象，而不是渲染到纹理对象。
+`Renderbuffe`r只是一个包含可渲染内部格式的单个映像的数据存储对象。它用于存储没有相应纹理格式的`OpenGL`逻辑缓冲区，如模板或深度缓冲区。
+
+3. 申请一个`textureId`,挂载到`GL_COLOR_ATTACHMENT0`上。
+4. 重新切换到FrameBuffer上（绑定），然后绘制。
+
+我们就可以通过这个纹理，得到保存在`FBO`上的数据了
+
+##### 添加滤镜的绘制
+![添加滤镜.png](https://upload-images.jianshu.io/upload_images/1877190-c5ec2d840583b5c4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+我们可以通过`FBO`，进行滤镜处理。我们将得到的数据，再次进行绘制，在这次的绘制中，我们就可以添加上我们想要的滤镜处理了。
+
+但是这里不仅仅是要绘制到屏幕上，同时要在开启录制的时候，输入给Encoder进行视频的编码和封装。
+所以我们需要将数据再写写入一个新的FrameBuffer中，然后再其输出的outputTexture中，就可以得到应用了纹理的数据了。
+
+- 滤镜处理
+就算将上面的OffscreenTextureId作为这里滤镜的输入Id.
+```java
+    @Override
+    public void onDrawFrame(GL10 gl) {
+         //...省略
+        //经过路径处理
+        mColorFilter.setTextureId(mOffscreenTextureId);
+        mColorFilter.onDrawFrame();
+        int outputTextureId = mColorFilter.getOutputTextureId();
+        //...省略
+    }
+```
+同时滤镜内，也按照上面的`FrameBuffer`的处理流程。将数据挂载到`FrameBuffer`上。得到挂载在`FrameBuffer`上的`outputTextureId` 
+```java
+代码同上，省略
+```
+
+##### 将应用了滤镜的纹理分别绘制到`GLView`和`Encoder`当中
+![image.png](https://upload-images.jianshu.io/upload_images/1877190-a80ef8c8bce4ddb4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+```java
+@Override
+    public void onDrawFrame(GL10 gl) {
+        //省略...
+        //经过滤镜处理
+        mColorFilter.setTextureId(mOffscreenTextureId);
+        mColorFilter.onDrawFrame();
+        int outputTextureId = mColorFilter.getOutputTextureId();
+
+        //将得到的outputTextureId，输入encoder,进行编码
+        mVideoEncoder.setTextureId(outputTextureId);
+
+        mVideoEncoder.frameAvailable(mSurfaceTexture);
+
+        //将得到的outputTextureId,再次Draw,因为没有FrameBuffer,所以这次Draw的数据，就直接到了Surface上了。
+        mShowFilter.setTextureId(outputTextureId);
+        mShowFilter.onDrawFrame();
+    }
+```
+1. 将得到的`outputTextureId`，输入`Encoder`的`InputSurface`中,通知内部进行`draw` 和进行编码。
+2. 将得到的`outputTextureId`,再次Draw,因为没有`FrameBuffer`,所以这次`draw`的数据，就直接到了`Surface`上了。也就是直接绘制到了我们的`GLSurfaceView`上了。
+
 ## 最后
-整编文章就重要的部分还是在理解整个纹理中数据传递的路线。
-后续，会对这里的相机的预览添加其他的滤镜。
-Demo位置
-https://github.com/deepsadness/ZeroToOpenGL
+1. 对比上一编文章的绘制流程。上文是直接将纹理绘制到了`GLView`上显示，而这里是将纹理绘制到绑定的`FrameBuffer`中，而且
+绘制的结果不直接显示出来。所以可以形象的理解离屏绘制，就是将绘制的结果保存在与`FrameBuffer`绑定的一个新的`textureId`（`OffscreenTextureId`）中，不直接绘制到屏幕上。
+2. 把握好整体流程之后，这部分的处理也会变得简单起来。后面就可以如何添加更加炫酷的滤镜和玩法了。
+
+
