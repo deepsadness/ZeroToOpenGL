@@ -4,7 +4,6 @@
 上文中我们已经实现了在纹理上添加滤镜的效果。这编文章就是将OpenGl和相机结合到一起。
 
 ## 预览与拍照
----
 ### 整体流程理解 
 
 ![预览的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-5849161f9588f95f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -513,7 +512,6 @@ public void draw() {
 最后在GLSurfaceView的对应的生命周期内调用方法就可以了~~
 
 ## 录制
----
 ### 整体流程理解 
 
 ![录制的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-928ba344a7b36d8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -937,7 +935,6 @@ mVideoEncoder.frameAvailable(mSurfaceTexture);
 ```
 
 ## 添加滤镜
----
 ### 整体流程理解 
 ![添加滤镜后的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-be65971711ceba01.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
