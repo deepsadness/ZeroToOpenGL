@@ -1,10 +1,12 @@
-![cover.png](https://upload-images.jianshu.io/upload_images/1877190-87d9a30420e712e1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![cover.png](https://upload-images.jianshu.io/upload_images/1877190-a134d64bb566ee05.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 上文中我们已经实现了在纹理上添加滤镜的效果。这编文章就是将OpenGl和相机结合到一起。
 
 ## 预览与拍照
-### 整体流程理解 
 ---
+### 整体流程理解 
+
 ![预览的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-5849161f9588f95f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 1. 将`Camera`中得到的`ImageStream`由`SurfaceTexture`接受，并转换成`OpenGL ES`纹理。
@@ -15,7 +17,6 @@ Camera ==>SurfaceTexture==>texture(samplerExternalOES) ==>draw to GLSurfaceView
 ```
 
 ### 各个部分详解
----
 #### Camra Api
 首先是相机的Api的书写。
 ##### Camera Interface
@@ -297,7 +298,7 @@ public class CameraApi14 implements ICamera {
 相机的`parameter`的选择，只要选对了对应的想要的比例就行了。没有其他需要的。
 设备坐标和纹理坐标之间的方向不同问题，由后面纹理的矩阵来控制就好了。
 
----
+
 #### SurfaceTexture
 可以从图像流中捕获帧作为`OpenGL ES`纹理。
 1. 直接使用创建的纹理，来创建SurfaceTexture就可以了。
@@ -507,13 +508,14 @@ public void draw() {
         GLES20.glDisableVertexAttribArray(mACoord);
     }
 ```
---- 
+
 #### GLSurfaceView
 最后在GLSurfaceView的对应的生命周期内调用方法就可以了~~
 
 ## 录制
-### 整体流程理解 
 ---
+### 整体流程理解 
+
 ![录制的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-928ba344a7b36d8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 在原来预览的基础上，我们需要加入`MediaCodec`进行视频编码。
@@ -550,7 +552,6 @@ Camera==>
 
 ```
 ### 各个部分详解
----
 #### TextureMovieEncoder
 主要还是添加了一个这个类。
 > 理想状态下，我们创建Video Encoder，然后为它创建EGLContext，然后将这个context传入GLSurfaceView来共享。 但是这里的Api做不到这样，所以我们只能反着来。当GLSurfaceView torn down时，（可能时我们旋转了屏幕），EGLContext也会同样被抛弃。这样意味这当它回来的时候，我们就需要重新为Video encoder创建EGLContext.(而且，"preserve EGLContext on pause" 这样的功能，也不启作用。就是上一个暂停状态的EGLContext，在这里也不能用)我们可以通过使用TextureView 来替代GLSurfaceView来做一些简化。但是这样会由一点性能的问题。
@@ -936,11 +937,11 @@ mVideoEncoder.frameAvailable(mSurfaceTexture);
 ```
 
 ## 添加滤镜
-### 整体流程理解 
 ---
+### 整体流程理解 
 ![添加滤镜后的整体流程.png](https://upload-images.jianshu.io/upload_images/1877190-be65971711ceba01.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-上编文章，我们是直接绘制OES的纹理。这里，因为要添加滤镜的效果。所以我们需要将纹理进行处理。
+上面，我们是直接绘制OES的纹理。这里，因为要添加滤镜的效果。所以我们需要将纹理进行处理。
 #### 离屏绘制
 ![离屏绘制.png](https://upload-images.jianshu.io/upload_images/1877190-3ebb3fd62abc2a3f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 先将`OES`纹理，绑定到`FrameBuffer`上。同时会在`FrameBuffer`上绑定一个新的`textureId`(这里命名为`OffscreenTextureId`)。然后调用绘制`OES`纹理的方法，数据就会传递到`FBO`上。而我们可以通过绑定在其上的`OffscreenTextureId`得到其数据。通常情况下，我们把绑定`FrameBuffer`和绘制这个新的`OffscreenTextureId`代表的纹理的过程，称为离屏绘制。
@@ -1090,9 +1091,12 @@ mVideoEncoder.frameAvailable(mSurfaceTexture);
 1. 将得到的`outputTextureId`，输入`Encoder`的`InputSurface`中,通知内部进行`draw` 和进行编码。
 2. 将得到的`outputTextureId`,再次Draw,因为没有`FrameBuffer`,所以这次`draw`的数据，就直接到了`Surface`上了。也就是直接绘制到了我们的`GLSurfaceView`上了。
 
-## 最后
-1. 对比上一编文章的绘制流程。上文是直接将纹理绘制到了`GLView`上显示，而这里是将纹理绘制到绑定的`FrameBuffer`中，而且
+### 小结
+1. 对比之前绘制流程。上文是直接将纹理绘制到了`GLView`上显示，而这里是将纹理绘制到绑定的`FrameBuffer`中，而且
 绘制的结果不直接显示出来。所以可以形象的理解离屏绘制，就是将绘制的结果保存在与`FrameBuffer`绑定的一个新的`textureId`（`OffscreenTextureId`）中，不直接绘制到屏幕上。
 2. 把握好整体流程之后，这部分的处理也会变得简单起来。后面就可以如何添加更加炫酷的滤镜和玩法了。
 
 
+## 最后
+整编文章就重要的部分还是在理解整个纹理中数据传递的路线。
+后续，会对这里的相机的预览添加其他的滤镜。
