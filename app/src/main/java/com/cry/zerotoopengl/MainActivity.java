@@ -1,13 +1,14 @@
 package com.cry.zerotoopengl;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import com.cry.zero_camera.CameraActivity;
-import com.cry.zero_camera.CameraCaptureActivity;
-import com.cry.zero_camera.CameraCaptureFilterActivity;
+import com.cry.zero_camera.camera_filter.CameraCaptureFilterActivity;
+import com.cry.zero_camera.capture.CameraCaptureActivity;
+import com.cry.zero_camera.preview.CameraActivity;
+import com.cry.zero_camera.video_source.VideoCaptureFilterActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,5 +28,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void ToZeroCameraCaptureFilter(View view) {
         startActivity(new Intent(this, CameraCaptureFilterActivity.class));
+    }
+
+    public void ToZeroVideoCaptureFilter(View view) {
+        startActivity(new Intent(this, VideoCaptureFilterActivity.class));
     }
 }

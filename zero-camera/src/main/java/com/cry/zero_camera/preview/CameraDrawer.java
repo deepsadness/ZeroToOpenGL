@@ -1,4 +1,4 @@
-package com.cry.zero_camera;
+package com.cry.zero_camera.preview;
 
 import android.content.res.Resources;
 import android.graphics.SurfaceTexture;

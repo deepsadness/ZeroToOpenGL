@@ -1,4 +1,4 @@
-package com.cry.zero_camera;
+package com.cry.zero_camera.preview;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
@@ -18,17 +18,17 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * 创建一个OpenGL环境。在这里创建Camera 和 Camera输出的SurfaceView
  */
-public class CameraCaptureFilterView extends GLSurfaceView implements GLSurfaceView.Renderer {
+public class CameraView extends GLSurfaceView implements GLSurfaceView.Renderer {
     private static final String TAG = "CameraView";
     //    private IAiyaCamera mCameraApi;
     private ICamera mCameraApi;
     //    private int mCameraIdDefault = Camera.CameraInfo.CAMERA_FACING_BACK;
     private int mCameraIdDefault = 0;
-    private CameraFilterRender mCameraRender;
+    private CameraDrawer mCameraDrawer;
     private int width;
     private int height;
 
-    public CameraCaptureFilterView(Context context) {
+    public CameraView(Context context) {
         super(context);
         initEGL();
         initCameraApi(context);
@@ -40,20 +40,21 @@ public class CameraCaptureFilterView extends GLSurfaceView implements GLSurfaceV
         setRenderer(this);
         //只有刷新之后，才会去重绘
         setRenderMode(RENDERMODE_WHEN_DIRTY);
+
     }
 
     private void initCameraApi(Context context) {
 //        mCameraApi = new KitkatCamera();
         mCameraApi = new CameraApi14();
-        mCameraRender = new CameraFilterRender(context.getResources());
+        mCameraDrawer = new CameraDrawer(context.getResources());
     }
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        mCameraRender.onSurfaceCreated(gl, config);
+        mCameraDrawer.onSurfaceCreated(gl, config);
 
         mCameraApi.open(mCameraIdDefault);
-        mCameraRender.setCameraId(mCameraIdDefault);
+        mCameraDrawer.setCameraId(mCameraIdDefault);
 
 
         CameraSize previewSize = mCameraApi.getPreviewSize();
@@ -64,11 +65,11 @@ public class CameraCaptureFilterView extends GLSurfaceView implements GLSurfaceV
 //        int previewSizeWidth = previewSize.x;
 //        int previewSizeHeight = previewSize.y;
 
-        mCameraRender.setPreviewSize(previewSizeWidth, previewSizeHeight);
+        mCameraDrawer.setPreviewSize(previewSizeWidth, previewSizeHeight);
 
-        mCameraApi.setPreviewTexture(mCameraRender.getSurfaceTexture());
+        mCameraApi.setPreviewTexture(mCameraDrawer.getSurfaceTexture());
         //默认使用的GLThread.每次刷新的时候，都强制要求是刷新这个GLSurfaceView
-        mCameraRender.getSurfaceTexture().setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+        mCameraDrawer.getSurfaceTexture().setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
             @Override
             public void onFrameAvailable(SurfaceTexture surfaceTexture) {
                 requestRender();
@@ -79,7 +80,7 @@ public class CameraCaptureFilterView extends GLSurfaceView implements GLSurfaceV
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        mCameraRender.onSurfaceChanged(gl, width, height);
+        mCameraDrawer.onSurfaceChanged(gl, width, height);
         //设置ViewPort是必须要做的
         GLES20.glViewport(0, 0, width, height);
         this.width = width;
@@ -88,21 +89,13 @@ public class CameraCaptureFilterView extends GLSurfaceView implements GLSurfaceV
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        mCameraRender.onDrawFrame(gl);
+        mCameraDrawer.onDrawFrame(gl);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         mCameraApi.close();
-
-        queueEvent(new Runnable() {
-            @Override public void run() {
-                // Tell the renderer that it's about to be paused so it can clean up.
-                mCameraRender.notifyPausing();
-            }
-        });
-        Log.d(TAG, "onPause complete");
     }
 
     int takePhotoFromGL = 0;
@@ -111,7 +104,7 @@ public class CameraCaptureFilterView extends GLSurfaceView implements GLSurfaceV
         if (takePhotoFromGL != 1) {
             if (mCameraApi != null) {
                 float[] mtx = new float[16];
-                mCameraRender.getSurfaceTexture().getTransformMatrix(mtx);
+                mCameraDrawer.getSurfaceTexture().getTransformMatrix(mtx);
                 mCameraApi.takePhoto(callback);
             }
         } else {
@@ -130,12 +123,5 @@ public class CameraCaptureFilterView extends GLSurfaceView implements GLSurfaceV
             });
         }
 
-    }
-
-    public void changeRecordingState(boolean mRecordingEnabled) {
-        queueEvent(() -> {
-            // notify the renderer that we want to change the encoder's state
-            mCameraRender.changeRecordingState(mRecordingEnabled);
-        });
     }
 }

@@ -7,11 +7,12 @@
 
     <application>
         <activity
-            android:name=".CameraActivity"
+            android:name=".preview.CameraActivity"
             android:label="@string/title_activity_camera"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".CameraCaptureActivity" />
-        <activity android:name=".CameraCaptureFilterActivity" />
+        <activity android:name=".capture.CameraCaptureActivity" />
+        <activity android:name=".camera_filter.CameraCaptureFilterActivity" />
+        <activity android:name=".video_source.VideoCaptureFilterActivity" />
     </application>
 
 </manifest>

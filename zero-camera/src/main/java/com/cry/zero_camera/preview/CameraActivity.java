@@ -1,4 +1,4 @@
-package com.cry.zero_camera;
+package com.cry.zero_camera.preview;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -13,6 +13,7 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import com.cry.zero_camera.R;
 import com.cry.zero_common.permission.ConfirmationDialogFragment;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
