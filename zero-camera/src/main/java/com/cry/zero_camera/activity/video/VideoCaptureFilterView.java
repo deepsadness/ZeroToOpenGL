@@ -1,4 +1,4 @@
-package com.cry.zero_camera.video_source;
+package com.cry.zero_camera.activity.video;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;

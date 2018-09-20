@@ -1,4 +1,4 @@
-package com.cry.zero_camera.camera_filter;
+package com.cry.zero_camera.activity.capture;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
@@ -18,17 +18,17 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * 创建一个OpenGL环境。在这里创建Camera 和 Camera输出的SurfaceView
  */
-public class CameraCaptureFilterView extends GLSurfaceView implements GLSurfaceView.Renderer {
+public class CameraCaptureView extends GLSurfaceView implements GLSurfaceView.Renderer {
     private static final String TAG = "CameraView";
     //    private IAiyaCamera mCameraApi;
     private ICamera mCameraApi;
     //    private int mCameraIdDefault = Camera.CameraInfo.CAMERA_FACING_BACK;
     private int mCameraIdDefault = 0;
-    private CameraFilterRender mCameraRender;
+    private CameraRender mCameraRender;
     private int width;
     private int height;
 
-    public CameraCaptureFilterView(Context context) {
+    public CameraCaptureView(Context context) {
         super(context);
         initEGL();
         initCameraApi(context);
@@ -40,12 +40,13 @@ public class CameraCaptureFilterView extends GLSurfaceView implements GLSurfaceV
         setRenderer(this);
         //只有刷新之后，才会去重绘
         setRenderMode(RENDERMODE_WHEN_DIRTY);
+
     }
 
     private void initCameraApi(Context context) {
 //        mCameraApi = new KitkatCamera();
         mCameraApi = new CameraApi14();
-        mCameraRender = new CameraFilterRender(context.getResources());
+        mCameraRender = new CameraRender(context.getResources());
     }
 
     @Override

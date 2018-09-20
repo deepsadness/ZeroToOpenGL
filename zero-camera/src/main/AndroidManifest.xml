@@ -10,9 +10,9 @@
             android:name=".preview.CameraActivity"
             android:label="@string/title_activity_camera"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".capture.CameraCaptureActivity" />
-        <activity android:name=".camera_filter.CameraCaptureFilterActivity" />
-        <activity android:name=".video_source.VideoCaptureFilterActivity" />
+        <activity android:name=".activity.capture.CameraCaptureActivity" />
+        <activity android:name=".activity.camera_filter.CameraCaptureFilterActivity" />
+        <activity android:name=".activity.video.VideoCaptureFilterActivity" />
     </application>
 
 </manifest>

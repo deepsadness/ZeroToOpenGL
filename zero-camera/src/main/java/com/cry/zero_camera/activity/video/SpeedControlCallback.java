@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.cry.zero_camera.video_source;
+package com.cry.zero_camera.activity.video;
 
 import android.util.Log;
 

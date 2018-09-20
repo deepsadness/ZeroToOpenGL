@@ -1,4 +1,4 @@
-package com.cry.zero_camera.video_source;
+package com.cry.zero_camera.activity.video;
 
 import android.graphics.SurfaceTexture;
 import android.media.MediaCodec;
@@ -365,7 +365,6 @@ public class VideoDecoderCore {
 
     public void setSurface(SurfaceTexture surfaceTexture) {
         this.mOutputSurface = new Surface(surfaceTexture);
-        ;
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.cry.zero_camera.capture;
+package com.cry.zero_camera.activity.camera_filter;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -13,11 +13,11 @@ import com.cry.zero_camera.R;
 import com.cry.zero_common.permission.ConfirmationDialogFragment;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
-public class CameraCaptureActivity extends AppCompatActivity {
+public class CameraCaptureFilterActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 2;
     private FrameLayout mContainer;
     //    public CameraViewO mCameraView;
-    public CameraCaptureView mCameraView;
+    public CameraCaptureFilterView mCameraView;
     private RxPermissions rxPermissions;
     private boolean mRecordingEnabled;      // controls button state
     private Button buttonStart;
@@ -91,7 +91,7 @@ public class CameraCaptureActivity extends AppCompatActivity {
     private void startCamera() {
         if (mCameraView == null) {
 //            mCameraView = new CameraViewO(this);
-            mCameraView = new CameraCaptureView(this);
+            mCameraView = new CameraCaptureFilterView(this);
             mContainer.addView(mCameraView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
     }

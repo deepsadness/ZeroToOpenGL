@@ -5,10 +5,10 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import com.cry.zero_camera.camera_filter.CameraCaptureFilterActivity;
-import com.cry.zero_camera.capture.CameraCaptureActivity;
+import com.cry.zero_camera.activity.camera_filter.CameraCaptureFilterActivity;
+import com.cry.zero_camera.activity.capture.CameraCaptureActivity;
+import com.cry.zero_camera.activity.video.VideoCaptureFilterActivity;
 import com.cry.zero_camera.preview.CameraActivity;
-import com.cry.zero_camera.video_source.VideoCaptureFilterActivity;
 
 public class MainActivity extends AppCompatActivity {
 

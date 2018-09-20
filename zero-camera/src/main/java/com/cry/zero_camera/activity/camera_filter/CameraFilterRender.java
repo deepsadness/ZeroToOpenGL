@@ -1,18 +1,19 @@
-package com.cry.zero_camera.video_source;
+package com.cry.zero_camera.activity.camera_filter;
 
 import android.content.res.Resources;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.opengl.EGL14;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.opengl.Matrix;
 import android.os.Environment;
 import android.util.Log;
 
 import com.cry.zero_camera.ref.TextureMovieEncoder2D;
 import com.cry.zero_camera.render.ColorFiler;
 import com.cry.zero_camera.render.OesRecordFilter;
+import com.cry.zero_common.opengl.Gl2Utils;
 
 import java.io.File;
 
@@ -22,37 +23,41 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  *
  */
-public class VideoFilterRender implements GLSurfaceView.Renderer {
+public class CameraFilterRender implements GLSurfaceView.Renderer {
     private static final String TAG = "CameraRender";
-    private static final int RECORDING_OFF = 0;
-    private static final int RECORDING_ON = 1;
-    private static final int RECORDING_RESUMED = 2;
     //    private final AFilter mOesFilter;
     private final OesRecordFilter mOesFilter;
     private final ColorFiler mColorFilter;
     private final ColorFiler mShowFilter;
-    File mOutputFile;
+    //相机的id
+    private int mCameraId = 0;
     //相机输出的surfaceView
     private SurfaceTexture mSurfaceTexture;
     //绘制的纹理ID
     private int mTextureId;
+
     private int mSurfaceWidth;
     private int mSurfaceHeight;
+
     private int mPreviewWidth;
     private int mPreviewHeight;
+
     //视图矩阵。控制旋转和变化
     private float[] mModelMatrix = new float[16];
+    File mOutputFile;
     private boolean mRecordingEnabled;
     private int mRecordingStatus;
+    private static final int RECORDING_OFF = 0;
+    private static final int RECORDING_ON = 1;
+    private static final int RECORDING_RESUMED = 2;
     private TextureMovieEncoder2D mVideoEncoder;
     private int mOffscreenTextureId;
     private int mFrameBuffer;
     private int mRenderBuffer;
-    private float[] transfrom = new float[16];
 
-    public VideoFilterRender(Resources res) {
+    public CameraFilterRender(Resources res) {
         mOesFilter = new OesRecordFilter(res);
-        mColorFilter = new ColorFiler(ColorFiler.Filter.WARM);
+        mColorFilter = new ColorFiler(ColorFiler.Filter.COOL);
         mShowFilter = new ColorFiler(ColorFiler.Filter.NONE);
         mVideoEncoder = new TextureMovieEncoder2D();
     }
@@ -112,8 +117,6 @@ public class VideoFilterRender implements GLSurfaceView.Renderer {
 
         this.mSurfaceWidth = width;
         this.mSurfaceHeight = height;
-        this.mPreviewWidth = width;
-        this.mPreviewHeight = height;
         calculateMatrix();
 
 
@@ -187,18 +190,19 @@ public class VideoFilterRender implements GLSurfaceView.Renderer {
     //计算需要变化的矩阵
     private void calculateMatrix() {
 //        得到通用的显示的matrix
-//        Gl2Utils.getShowMatrix(mModelMatrix, mPreviewWidth, mPreviewHeight, this.mSurfaceWidth, this.mSurfaceHeight);
-//
-//        if (mCameraId == Camera.CameraInfo.CAMERA_FACING_FRONT) {  //前置摄像头
-//            Gl2Utils.flip(mModelMatrix, true, false);
-//            Gl2Utils.rotate(mModelMatrix, 90);
-//        } else {  //后置摄像头
-//            int rotateAngle = 270;
-//            Gl2Utils.rotate(mModelMatrix, rotateAngle);
-//        }
-        Matrix.setIdentityM(mModelMatrix, 0);
+        Gl2Utils.getShowMatrix(mModelMatrix, mPreviewWidth, mPreviewHeight, this.mSurfaceWidth, this.mSurfaceHeight);
+
+        if (mCameraId == Camera.CameraInfo.CAMERA_FACING_FRONT) {  //前置摄像头
+            Gl2Utils.flip(mModelMatrix, true, false);
+            Gl2Utils.rotate(mModelMatrix, 90);
+        } else {  //后置摄像头
+            int rotateAngle = 270;
+            Gl2Utils.rotate(mModelMatrix, rotateAngle);
+        }
         mOesFilter.setMatrix(mModelMatrix);
     }
+
+    private float[] transfrom = new float[16];
 
     @Override
     public void onDrawFrame(GL10 gl) {
@@ -219,7 +223,7 @@ public class VideoFilterRender implements GLSurfaceView.Renderer {
                     Log.d(TAG, "file path = " + mOutputFile.getAbsolutePath());
                     // start recording
                     mVideoEncoder.startRecording(new TextureMovieEncoder2D.EncoderConfig(
-                            mOutputFile, mPreviewWidth, mPreviewHeight, 64000000, EGL14.eglGetCurrentContext()));
+                            mOutputFile,  mPreviewWidth, mPreviewHeight,64000000, EGL14.eglGetCurrentContext()));
                     mRecordingStatus = RECORDING_ON;
                     break;
                 case RECORDING_RESUMED:
@@ -279,6 +283,10 @@ public class VideoFilterRender implements GLSurfaceView.Renderer {
         mShowFilter.onDrawFrame();
     }
 
+    public void setCameraId(int cameraId) {
+        this.mCameraId = cameraId;
+    }
+
     public void setPreviewSize(int previewWidth, int previewHeight) {
         this.mPreviewWidth = previewWidth;
         this.mPreviewHeight = previewHeight;
@@ -300,7 +308,7 @@ public class VideoFilterRender implements GLSurfaceView.Renderer {
 //            mOesFilter.release(false);     // assume the GLSurfaceView EGL context is about
 //            mFullScreen = null;             //  to be destroyed
 //        }
-//        mIncomingWidth = mIncomingHeight = -/1;
+//        mIncomingWidth = mIncomingHeight = -1;
     }
 
     public void changeRecordingState(boolean isRecording) {
