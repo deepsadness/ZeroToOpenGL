@@ -126,6 +126,7 @@ public class VideoCaptureFilterView extends GLSurfaceView implements GLSurfaceVi
         queueEvent(() -> {
             // notify the renderer that we want to change the encoder's state
             mVideoRender.changeRecordingState(false);
+            requestRender();
         });
     }
 
@@ -142,5 +143,6 @@ public class VideoCaptureFilterView extends GLSurfaceView implements GLSurfaceVi
 
     public void stop() {
         mDecodeThread.sendStop();
+        changeRecordingState(false);
     }
 }
