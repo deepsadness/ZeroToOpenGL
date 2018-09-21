@@ -13,6 +13,8 @@
         <activity android:name=".activity.capture.CameraCaptureActivity" />
         <activity android:name=".activity.camera_filter.CameraCaptureFilterActivity" />
         <activity android:name=".activity.video.VideoCaptureFilterActivity" />
+        <activity android:name=".activity.double_input.DoubleInputActivity" />
+        <activity android:name=".activity.double_input.DoubleInput2Activity"></activity>
     </application>
 
 </manifest>

@@ -7,6 +7,7 @@ import android.view.View;
 
 import com.cry.zero_camera.activity.camera_filter.CameraCaptureFilterActivity;
 import com.cry.zero_camera.activity.capture.CameraCaptureActivity;
+import com.cry.zero_camera.activity.double_input.DoubleInput2Activity;
 import com.cry.zero_camera.activity.video.VideoCaptureFilterActivity;
 import com.cry.zero_camera.preview.CameraActivity;
 
@@ -33,4 +34,10 @@ public class MainActivity extends AppCompatActivity {
     public void ToZeroVideoCaptureFilter(View view) {
         startActivity(new Intent(this, VideoCaptureFilterActivity.class));
     }
+
+    public void ToZeroDoubleInput2(View view) {
+        startActivity(new Intent(this, DoubleInput2Activity.class));
+    }
+
+
 }
