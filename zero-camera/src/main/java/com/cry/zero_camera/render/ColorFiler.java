@@ -3,7 +3,7 @@ package com.cry.zero_camera.render;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 
-import com.cry.zero_common.opengl.ShaderUtils;
+import com.cry.zero_common.opengl.GLESUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -193,7 +193,7 @@ public class ColorFiler {
     public void onCreate() {
         GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GLES20.glEnable(GLES20.GL_TEXTURE_2D);
-        mProgram = ShaderUtils.createProgram(obtainVertex(), obtainFragment());
+        mProgram = GLESUtils.createProgram(obtainVertex(), obtainFragment());
         glPosition = GLES20.glGetAttribLocation(mProgram, "vPosition");
         glCoordinate = GLES20.glGetAttribLocation(mProgram, "vCoordinate");
         glMatrix = GLES20.glGetUniformLocation(mProgram, "vMatrix");

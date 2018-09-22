@@ -15,7 +15,6 @@
         <activity android:name=".activity.camera_filter.CameraCaptureFilterActivity" />
         <activity android:name=".activity.video.VideoCaptureFilterActivity" />
         <activity android:name=".activity.double_input.DoubleInput2Activity"></activity>
-        <activity android:name=".activity.ppt.PhotoAnimateActivity" />
         <activity android:name=".activity.ppt.PhotoAnimateSimpleActivity" />
     </application>
 
