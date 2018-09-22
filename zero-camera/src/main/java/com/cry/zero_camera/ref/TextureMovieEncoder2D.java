@@ -20,6 +20,7 @@ package com.cry.zero_camera.ref;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGLContext;
 import android.opengl.GLES20;
+import android.opengl.Matrix;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -56,9 +57,9 @@ import java.lang.ref.WeakReference;
  * <li>call TextureMovieEncoder#startRecording() with the config
  * <li>call TextureMovieEncoder#setTextureId() with the texture object that receives frames
  * <li>for each frame, after latching it with SurfaceTexture#updateTexImage(),
- *     call TextureMovieEncoder#frameAvailable().
+ * call TextureMovieEncoder#frameAvailable().
  * </ul>
- *
+ * <p>
  * TODO: tweak the API (esp. textureId) so it's less awkward for simple use cases.
  */
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
@@ -90,36 +91,40 @@ public class TextureMovieEncoder2D implements Runnable {
 
 
     /**
-     * Encoder configuration.
+     * Tells the video recorder that a new frame is available.  (Call from non-encoder thread.)
      * <p>
-     * Object is immutable, which means we can safely pass it between threads without
-     * explicit synchronization (and don't need to worry about it getting tweaked out from
-     * under us).
+     * This function sends a message and returns immediately.  This isn't sufficient -- we
+     * don't want the caller to latch a new frame until we're done with this one -- but we
+     * can get away with it so long as the input frame rate is reasonable and the encoder
+     * thread doesn't stall.
      * <p>
-     * TODO: make frame rate and iframe interval configurable?  Maybe use builder pattern
-     *       with reasonable defaults for those and bit rate.
+     * TODO: either block here until the texture has been rendered onto the encoder surface,
+     * or have a separate "block if still busy" method that the caller can execute immediately
+     * before it calls updateTexImage().  The latter is preferred because we don't want to
+     * stall the caller while this thread does work.
      */
-    public static class EncoderConfig {
-        final File mOutputFile;
-        final int mWidth;
-        final int mHeight;
-        final int mBitRate;
-        final EGLContext mEglContext;
-
-        public EncoderConfig(File outputFile, int width, int height, int bitRate,
-                             EGLContext sharedEglContext) {
-            mOutputFile = outputFile;
-            mWidth = width;
-            mHeight = height;
-            mBitRate = bitRate;
-            mEglContext = sharedEglContext;
+    public void frameAvailable(SurfaceTexture st) {
+        synchronized (mReadyFence) {
+            if (!mReady) {
+                return;
+            }
         }
 
-        @Override
-        public String toString() {
-            return "EncoderConfig: " + mWidth + "x" + mHeight + " @" + mBitRate +
-                    " to '" + mOutputFile.toString() + "' ctxt=" + mEglContext;
+        float[] transform = new float[16];      // TODO - avoid alloc every frame
+        st.getTransformMatrix(transform);
+        long timestamp = st.getTimestamp();
+        if (timestamp == 0) {
+            // Seeing this after device is toggled off/on with power button.  The
+            // first frame back has a zero timestamp.
+            //
+            // MPEG4Writer thinks this is cause to abort() in native code, so it's very
+            // important that we just ignore the frame.
+            Log.w(TAG, "HEY: got SurfaceTexture with timestamp of zero");
+            return;
         }
+
+        mHandler.sendMessage(mHandler.obtainMessage(MSG_FRAME_AVAILABLE,
+                (int) (timestamp >> 32), (int) timestamp, transform));
     }
 
     /**
@@ -183,20 +188,7 @@ public class TextureMovieEncoder2D implements Runnable {
         mHandler.sendMessage(mHandler.obtainMessage(MSG_UPDATE_SHARED_CONTEXT, sharedContext));
     }
 
-    /**
-     * Tells the video recorder that a new frame is available.  (Call from non-encoder thread.)
-     * <p>
-     * This function sends a message and returns immediately.  This isn't sufficient -- we
-     * don't want the caller to latch a new frame until we're done with this one -- but we
-     * can get away with it so long as the input frame rate is reasonable and the encoder
-     * thread doesn't stall.
-     * <p>
-     * TODO: either block here until the texture has been rendered onto the encoder surface,
-     * or have a separate "block if still busy" method that the caller can execute immediately
-     * before it calls updateTexImage().  The latter is preferred because we don't want to
-     * stall the caller while this thread does work.
-     */
-    public void frameAvailable(SurfaceTexture st) {
+    public void frameAvailable(long frameTimeNanos) {
         synchronized (mReadyFence) {
             if (!mReady) {
                 return;
@@ -204,8 +196,8 @@ public class TextureMovieEncoder2D implements Runnable {
         }
 
         float[] transform = new float[16];      // TODO - avoid alloc every frame
-        st.getTransformMatrix(transform);
-        long timestamp = st.getTimestamp();
+        Matrix.setIdentityM(transform, 0);
+        long timestamp = frameTimeNanos;
         if (timestamp == 0) {
             // Seeing this after device is toggled off/on with power button.  The
             // first frame back has a zero timestamp.
@@ -221,23 +213,9 @@ public class TextureMovieEncoder2D implements Runnable {
     }
 
     /**
-     * Tells the video recorder what texture name to use.  This is the external texture that
-     * we're receiving camera previews in.  (Call from non-encoder thread.)
-     * <p>
-     * TODO: do something less clumsy
-     */
-    public void setTextureId(int id) {
-        synchronized (mReadyFence) {
-            if (!mReady) {
-                return;
-            }
-        }
-        mHandler.sendMessage(mHandler.obtainMessage(MSG_SET_TEXTURE_ID, id, 0, null));
-    }
-
-    /**
      * Encoder thread entry point.  Establishes Looper/Handler and waits for messages.
      * <p>
+     *
      * @see Thread#run()
      */
     @Override
@@ -256,6 +234,42 @@ public class TextureMovieEncoder2D implements Runnable {
             mReady = mRunning = false;
             mHandler = null;
         }
+    }
+
+    /**
+     * Tells the video recorder what texture name to use.  This is the external texture that
+     * we're receiving camera previews in.  (Call from non-encoder thread.)
+     * <p>
+     * TODO: do something less clumsy
+     */
+    public void setTextureId(int id) {
+        synchronized (mReadyFence) {
+            if (!mReady) {
+                return;
+            }
+        }
+        mHandler.sendMessage(mHandler.obtainMessage(MSG_SET_TEXTURE_ID, id, 0, null));
+    }
+
+    /**
+     * Handles notification of an available frame.
+     * <p>
+     * The texture is rendered onto the encoder's input surface, along with a moving
+     * box (just because we can).
+     * <p>
+     *
+     * @param transform      The texture transform, from SurfaceTexture.
+     * @param timestampNanos The frame's timestamp, from SurfaceTexture.
+     */
+    private void handleFrameAvailable(float[] transform, long timestampNanos) {
+        if (VERBOSE) Log.d(TAG, "handleFrameAvailable tr=" + transform);
+        mVideoEncoder.drainEncoder(false);
+        mFullScreen.drawFrame(mTextureId, transform);
+
+        drawBox(mFrameNum++);
+
+        mInputWindowSurface.setPresentationTime(timestampNanos);
+        mInputWindowSurface.swapBuffers();
     }
 
 
@@ -318,23 +332,36 @@ public class TextureMovieEncoder2D implements Runnable {
     }
 
     /**
-     * Handles notification of an available frame.
+     * Encoder configuration.
      * <p>
-     * The texture is rendered onto the encoder's input surface, along with a moving
-     * box (just because we can).
+     * Object is immutable, which means we can safely pass it between threads without
+     * explicit synchronization (and don't need to worry about it getting tweaked out from
+     * under us).
      * <p>
-     * @param transform The texture transform, from SurfaceTexture.
-     * @param timestampNanos The frame's timestamp, from SurfaceTexture.
+     * TODO: make frame rate and iframe interval configurable?  Maybe use builder pattern
+     * with reasonable defaults for those and bit rate.
      */
-    private void handleFrameAvailable(float[] transform, long timestampNanos) {
-        if (VERBOSE) Log.d(TAG, "handleFrameAvailable tr=" + transform);
-        mVideoEncoder.drainEncoder(false);
-        mFullScreen.drawFrame(mTextureId, transform);
+    public static class EncoderConfig {
+        final File mOutputFile;
+        final int mWidth;
+        final int mHeight;
+        final int mBitRate;
+        final EGLContext mEglContext;
 
-        drawBox(mFrameNum++);
+        public EncoderConfig(File outputFile, int width, int height, int bitRate,
+                             EGLContext sharedEglContext) {
+            mOutputFile = outputFile;
+            mWidth = width;
+            mHeight = height;
+            mBitRate = bitRate;
+            mEglContext = sharedEglContext;
+        }
 
-        mInputWindowSurface.setPresentationTime(timestampNanos);
-        mInputWindowSurface.swapBuffers();
+        @Override
+        public String toString() {
+            return "EncoderConfig: " + mWidth + "x" + mHeight + " @" + mBitRate +
+                    " to '" + mOutputFile.toString() + "' ctxt=" + mEglContext;
+        }
     }
 
     /**

@@ -15,37 +15,43 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:onClick="ToZeroCamera"
-            android:text="ToZeroCamera" />
+            android:text="ToZeroCamera"
+            android:textAllCaps="false" />
 
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:onClick="ToZeroCameraCapture"
-            android:text="ToZeroCameraCapture" />
+            android:text="ToZeroCameraCapture"
+            android:textAllCaps="false" />
 
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:onClick="ToZeroCameraCaptureFilter"
-            android:text="ToZeroCameraCaptureFilter" />
+            android:text="ToZeroCameraCaptureFilter"
+            android:textAllCaps="false" />
 
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:onClick="ToZeroVideoCaptureFilter"
-            android:text="ToZeroVideoCaptureFilter" />
-
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:onClick="ToZeroDoubleInput"
-            android:text="ToZeroDoubleInput" />
+            android:text="ToZeroVideoCaptureFilter"
+            android:textAllCaps="false" />
 
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:onClick="ToZeroDoubleInput2"
-            android:text="ToZeroDoubleInput2" />
+            android:text="ToZeroDoubleInput2"
+            android:textAllCaps="false" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="ToPhotoAnimate"
+            android:text="ToPhotoAnimate"
+            android:textAllCaps="false" />
 
     </LinearLayout>
 

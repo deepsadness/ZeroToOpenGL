@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application>
         <activity
@@ -13,8 +14,9 @@
         <activity android:name=".activity.capture.CameraCaptureActivity" />
         <activity android:name=".activity.camera_filter.CameraCaptureFilterActivity" />
         <activity android:name=".activity.video.VideoCaptureFilterActivity" />
-        <activity android:name=".activity.double_input.DoubleInputActivity" />
         <activity android:name=".activity.double_input.DoubleInput2Activity"></activity>
+        <activity android:name=".activity.ppt.PhotoAnimateActivity" />
+        <activity android:name=".activity.ppt.PhotoAnimateSimpleActivity" />
     </application>
 
 </manifest>
