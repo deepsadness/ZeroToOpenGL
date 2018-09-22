@@ -82,12 +82,15 @@ public class DoubleInputView extends GLSurfaceView implements GLSurfaceView.Rend
                 }
             }
         }); //默认使用的GLThread.每次刷新的时候，都强制要求是刷新这个GLSurfaceView
-//        mCameraRender.getVideoSurfaceTexture().setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
-//            @Override
-//            public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        mCameraRender.getVideoSurfaceTexture().setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+            @Override
+            public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+                if (mCameraRender.isRecordingEnabled()) {
+                    requestRender();
+                }
 //                requestRender();
-//            }
-//        });
+            }
+        });
         mCameraApi.preview();
     }
 

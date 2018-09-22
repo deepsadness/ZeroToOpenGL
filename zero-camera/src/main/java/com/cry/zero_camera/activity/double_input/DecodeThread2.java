@@ -7,9 +7,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.cry.zero_camera.activity.double_input.video.SpeedControlCallback;
-import com.cry.zero_camera.activity.double_input.video.VideoDecoderCore;
-
 import java.io.File;
 import java.lang.ref.WeakReference;
 

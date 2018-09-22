@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Choreographer;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -24,7 +23,7 @@ import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import java.io.File;
 
-public class DoubleInput2Activity extends AppCompatActivity implements Choreographer.FrameCallback {
+public class DoubleInput2Activity extends AppCompatActivity {
 
     private static final int REQUEST_CAMERA_PERMISSION = 2;
     public DoubleInputView mCameraView;
@@ -74,11 +73,11 @@ public class DoubleInput2Activity extends AppCompatActivity implements Choreogra
         if (mRecordingEnabled) {
             buttonStart.setText("stop");
             mCameraView.start(mCurrentFile);
-            Choreographer.getInstance().postFrameCallback(this);
+//            Choreographer.getInstance().postFrameCallback(this);
         } else {
             buttonStart.setText("start");
             mCameraView.stop();
-            Choreographer.getInstance().removeFrameCallback(this);
+//            Choreographer.getInstance().removeFrameCallback(this);
         }
         mCameraView.changeRecordingState(mRecordingEnabled);
     }
@@ -89,7 +88,7 @@ public class DoubleInput2Activity extends AppCompatActivity implements Choreogra
         if (mCameraView != null) {
             mCameraView.onPause();
         }
-        Choreographer.getInstance().removeFrameCallback(this);
+//        Choreographer.getInstance().removeFrameCallback(this);
     }
 
     @SuppressLint("CheckResult")
@@ -98,9 +97,9 @@ public class DoubleInput2Activity extends AppCompatActivity implements Choreogra
         super.onResume();
         if (mCameraView != null) {
             mCameraView.onResume();
-            if (mRecordingEnabled) {
-                Choreographer.getInstance().postFrameCallback(this);
-            }
+//            if (mRecordingEnabled) {
+//                Choreographer.getInstance().postFrameCallback(this);
+//            }
         } else {
             rxPermissions
                     .request(Manifest.permission.CAMERA)
@@ -164,10 +163,10 @@ public class DoubleInput2Activity extends AppCompatActivity implements Choreogra
         }
     }
 
-
-    @Override
-    public void doFrame(long frameTimeNanos) {
-        mCameraView.requestRender();
-        Choreographer.getInstance().postFrameCallback(this);
-    }
+//
+//    @Override
+//    public void doFrame(long frameTimeNanos) {
+//        mCameraView.requestRender();
+//        Choreographer.getInstance().postFrameCallback(this);
+//    }
 }
