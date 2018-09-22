@@ -108,7 +108,7 @@ public class GlUtil {
         if (error != GLES20.GL_NO_ERROR) {
             String msg = op + ": glError 0x" + Integer.toHexString(error);
             Log.e(TAG, msg);
-            throw new RuntimeException(msg);
+//            throw new RuntimeException(msg);
         }
     }
 

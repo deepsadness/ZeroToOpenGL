@@ -149,4 +149,7 @@ public abstract class I2DFilter {
         this.mMVPMatrix = mMVPMatrix;
     }
 
+    public float[] getMVPMatrix() {
+        return mMVPMatrix;
+    }
 }

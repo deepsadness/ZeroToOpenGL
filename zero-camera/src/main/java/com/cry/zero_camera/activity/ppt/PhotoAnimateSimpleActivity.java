@@ -20,6 +20,8 @@ import com.cry.zero_camera.R;
 import com.cry.zero_camera.activity.ppt.render.SimpleRender;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
+import java.io.File;
+
 import io.reactivex.disposables.CompositeDisposable;
 
 public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Choreographer.FrameCallback {
@@ -28,7 +30,8 @@ public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Cho
     private SimpleRender renderController;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private long startTime = 0;
-    private long duration = 3;
+    private long duration = 6;
+    private boolean isRecord;
 
 
     @Override
@@ -59,36 +62,39 @@ public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Cho
             startActivityForResult(i, 1);
         });
 
-//        findViewById(R.id.change).setOnClickListener(v -> {
-//            int animateType = simplePhotoRender.getAnimateType();
-//            int resultType = 0;
-//            if (animateType == 3) {
-//            } else {
-//                resultType = animateType + 1;
-//            }
-//            String result = "";
-//            switch (resultType) {
-//                case 0:
-//                    result = "放大";
-//                    break;
-//                case 1:
-//                    result = "旋转";
-//                    break;
-//                case 2:
-//                case 3:
-//                    result = "平移X";
-//                    break;
-//                case 4:
-//                    result = "平移Y";
-//                    break;
-//            }
-//            Toast.makeText(this, result, Toast.LENGTH_SHORT).show();
-//
-//            simplePhotoRender.setAnimateType(resultType);
-//        });
-//        buttonStart.setOnClickListener(v -> {
-//            Choreographer.getInstance().postFrameCallback(this);
-//        });
+        findViewById(R.id.change).setOnClickListener(v -> {
+            int animateType = renderController.getAnimateType();
+            int resultType = 0;
+            if (animateType == 3) {
+            } else {
+                resultType = animateType + 1;
+            }
+            String result = "";
+            switch (resultType) {
+                case 0:
+                    result = "放大";
+                    break;
+                case 1:
+                    result = "旋转";
+                    break;
+                case 2:
+                case 3:
+                    result = "平移X";
+                    break;
+                case 4:
+                    result = "平移Y";
+                    break;
+            }
+            Toast.makeText(this, result, Toast.LENGTH_SHORT).show();
+
+            renderController.setAnimateType(resultType);
+        });
+
+        buttonStart.setOnClickListener(v -> {
+            isRecord = true;
+            Choreographer.getInstance().postFrameCallback(this);
+            mGLView.queueEvent(() -> renderController.changeRecordingState(isRecord));
+        });
 
 
     }
@@ -115,7 +121,9 @@ public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Cho
         super.onResume();
         if (mGLView != null) {
             mGLView.onResume();
-//            Choreographer.getInstance().removeFrameCallback(this);
+        }
+        if (isRecord) {
+            Choreographer.getInstance().postFrameCallback(this);
         }
     }
 
@@ -157,25 +165,30 @@ public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Cho
 
     @Override
     public void doFrame(long frameTimeNanos) {
-//        final long frame = frameTimeNanos;
-//        if (startTime == 0) {
-//            startTime = frameTimeNanos;
-//            Choreographer.getInstance().postFrameCallback(this);
-//        } else {
-//            float difSec = (frameTimeNanos - startTime) * 1f / 1000000000;
-//            if (duration >= difSec && difSec > 0) {
-//                mGLView.queueEvent(() -> {
-//                    simplePhotoRender.doFrame(frame, difSec, duration);
-//                });
-//                mGLView.requestRender();
-//                Choreographer.getInstance().postFrameCallback(this);
-//            } else {
-//                startTime = 0;
-//                mGLView.queueEvent(() -> {
-//                    simplePhotoRender.doFrame(frame, 0, 0);
-//                });
-//                Choreographer.getInstance().removeFrameCallback(this);
-//            }
-//        }
+        final long frame = frameTimeNanos;
+        if (startTime == 0) {
+            startTime = frameTimeNanos;
+            Choreographer.getInstance().postFrameCallback(this);
+        } else {
+            float difSec = (frameTimeNanos - startTime) * 1f / 1000000000;
+            if (duration >= difSec && difSec > 0) {
+                mGLView.queueEvent(() -> {
+                    renderController.doFrame(frame, difSec, duration);
+                });
+                mGLView.requestRender();
+                Choreographer.getInstance().postFrameCallback(this);
+            } else {
+                startTime = 0;
+                isRecord = false;
+                mGLView.queueEvent(() -> {
+                    renderController.changeRecordingState(isRecord);
+                    renderController.doFrame(frame, 0, 0);
+                });
+                Choreographer.getInstance().removeFrameCallback(this);
+                File outputFile = renderController.getOutputFile();
+                String result = outputFile.getAbsolutePath();
+                runOnUiThread(() -> Toast.makeText(this, "save file path = " + result, Toast.LENGTH_SHORT).show());
+            }
+        }
     }
 }

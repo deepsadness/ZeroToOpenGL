@@ -8,6 +8,9 @@ import com.cry.zero_common.opengl.MatrixUtils;
 public class PhotoFilter extends I2DFilter {
     private Bitmap mBitmap;
 
+    public PhotoFilter() {
+    }
+
     @Override
     public String obtainVertex() {
         return "attribute vec4 aPosition;\n" +
@@ -37,7 +40,14 @@ public class PhotoFilter extends I2DFilter {
 
     }
 
+    public Bitmap getBitmap() {
+        return mBitmap;
+    }
+
     public void setBitmap(Bitmap bitmap) {
+//        if (this.mBitmap == bitmap) {
+//            return;
+//        }
         this.mBitmap = bitmap;
         setTextureId(GLESUtils.createTexture(bitmap));
         setMVPMatrix(MatrixUtils.calculateMatrixForBitmap(bitmap, width, height));

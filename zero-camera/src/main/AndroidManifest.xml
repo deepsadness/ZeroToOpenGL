@@ -16,6 +16,7 @@
         <activity android:name=".activity.video.VideoCaptureFilterActivity" />
         <activity android:name=".activity.double_input.DoubleInput2Activity"></activity>
         <activity android:name=".activity.ppt.PhotoAnimateSimpleActivity" />
+        <activity android:name=".activity.ppt.ccc.RecordFBOActivity" />
     </application>
 
 </manifest>
