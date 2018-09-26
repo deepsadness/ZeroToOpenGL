@@ -9,7 +9,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.cry.zero_camera.R;
-import com.cry.zero_camera.activity.ppt.backgroud.maker.TestMaker;
+import com.cry.zero_camera.activity.ppt.backgroud.maker.StaticPhotoMaker;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import io.reactivex.disposables.CompositeDisposable;
@@ -36,9 +36,9 @@ public class GenerateMovieActivity extends AppCompatActivity {
     @SuppressLint("StaticFieldLeak")
     public void startGenerate(View view) {
         engine = new MovieEngine.MovieBuilder()
-                .maker(new TestMaker("/storage/emulated/0/tencent/MicroMsg/WeiXin/mmexport1529734446397.png"))
-                .maker(new TestMaker("/storage/emulated/0/tencent/MicroMsg/WeiXin/mmexport1529911150337.png"))
-                .maker(new TestMaker("/storage/emulated/0/tencent/MicroMsg/WeiXin/mmexport1531208871527.png"))
+                .maker(new StaticPhotoMaker("/storage/emulated/0/tencent/MicroMsg/WeiXin/mmexport1529734446397.png"))
+                .maker(new StaticPhotoMaker("/storage/emulated/0/tencent/MicroMsg/WeiXin/mmexport1529911150337.png"))
+                .maker(new StaticPhotoMaker("/storage/emulated/0/tencent/MicroMsg/WeiXin/mmexport1531208871527.png"))
                 .width(720)
                 .height(1280)
                 .listener(new MovieEngine.ProgressListener() {

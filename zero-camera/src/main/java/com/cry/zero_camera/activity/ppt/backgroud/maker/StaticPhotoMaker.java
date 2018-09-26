@@ -6,12 +6,12 @@ import android.graphics.BitmapFactory;
 import com.cry.zero_camera.activity.ppt.backgroud.MovieMaker;
 import com.cry.zero_camera.render.fliter.PhotoFilter;
 
-public class TestMaker implements MovieMaker {
+public class StaticPhotoMaker implements MovieMaker {
     PhotoFilter photoFilter;
 
     String filePath;
 
-    public TestMaker(String filePath) {
+    public StaticPhotoMaker(String filePath) {
         this.filePath = filePath;
     }
 
