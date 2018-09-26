@@ -12,10 +12,4 @@
         android:onClick="startGenerate"
         android:text="start" />
 
-    <TextView
-        android:id="@+id/progress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:onClick="startGenerate"
-        android:text="当前进度是" />
 </LinearLayout>

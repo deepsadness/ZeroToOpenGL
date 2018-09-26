@@ -1,14 +1,13 @@
 package com.cry.zero_camera.activity.ppt.backgroud.maker;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 
 import com.cry.zero_camera.activity.ppt.backgroud.MovieMaker;
 import com.cry.zero_camera.render.fliter.PhotoFilter;
+import com.cry.zero_common.BitmapHelper;
 
 public class StaticPhotoMaker implements MovieMaker {
     PhotoFilter photoFilter;
-
     String filePath;
 
     public StaticPhotoMaker(String filePath) {
@@ -24,7 +23,7 @@ public class StaticPhotoMaker implements MovieMaker {
     @Override
     public void setSize(int width, int height) {
         photoFilter.onSizeChange(width, height);
-        Bitmap bitmap = BitmapFactory.decodeFile(filePath);
+        Bitmap bitmap = BitmapHelper.decodeBitmap(520, filePath);
         photoFilter.setBitmap(bitmap);
     }
 

@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
+import static com.cry.zero_camera.activity.ppt.backgroud.MovieMaker.ONE_BILLION;
+
 public class MovieEngine extends HandlerThread {
 
 
@@ -94,7 +96,7 @@ public class MovieEngine extends HandlerThread {
             }
             long tempTime = 0;
             int frameIndex = 0;
-            while (tempTime <= totalDuration) {
+            while (tempTime <= totalDuration + ONE_BILLION / 30) {
                 mVideoEncoder.drainEncoder(false);
                 generateFrame(tempTime);
                 long presentationTimeNsec = computePresentationTimeNsec(frameIndex);
@@ -107,6 +109,7 @@ public class MovieEngine extends HandlerThread {
                     break;
                 }
             }
+            System.out.println("total frames =" + (frameIndex));
             //finish
             mVideoEncoder.drainEncoder(true);
             isCompleted = true;
