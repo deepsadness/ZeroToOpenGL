@@ -11,27 +11,30 @@ import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
 import android.view.Choreographer;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
 import com.cry.zero_camera.R;
-import com.cry.zero_camera.activity.ppt.render.SimpleRender;
+import com.cry.zero_camera.activity.ppt.render.SimpleRender3;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
-import java.io.File;
+import java.util.ArrayList;
 
 import io.reactivex.disposables.CompositeDisposable;
 
 public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Choreographer.FrameCallback {
     private GLSurfaceView mGLView;
     private Button buttonStart;
-    private SimpleRender renderController;
+    private SimpleRender3 renderController;
+    //    private SimpleRender2 renderController;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private long startTime = 0;
-    private long duration = 6;
+    private long duration = 1;
     private boolean isRecord;
+    private long pauseTime = 1;
 
 
     @Override
@@ -53,19 +56,21 @@ public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Cho
 
         mGLView = (GLSurfaceView) findViewById(R.id.surface);
         buttonStart = findViewById(R.id.fab);
-
+//        Executors
         initGL();
 
         findViewById(R.id.pick).setOnClickListener(v -> {
-            Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
-            i.setType("image/*");
-            startActivityForResult(i, 1);
+//            Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
+//            i.setType("image/*");
+//            startActivityForResult(i, 1);
+
+            startActivityForResult(new Intent(PhotoAnimateSimpleActivity.this, PickMorePicsActivity.class), 5);
         });
 
         findViewById(R.id.change).setOnClickListener(v -> {
             int animateType = renderController.getAnimateType();
             int resultType = 0;
-            if (animateType == 3) {
+            if (animateType == 4) {
             } else {
                 resultType = animateType + 1;
             }
@@ -82,26 +87,34 @@ public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Cho
                     result = "平移X";
                     break;
                 case 4:
-                    result = "平移Y";
+                    result = "缩小";
                     break;
             }
+            final int type = resultType;
             Toast.makeText(this, result, Toast.LENGTH_SHORT).show();
+            mGLView.queueEvent(() -> renderController.setAnimateType(type));
 
-            renderController.setAnimateType(resultType);
         });
 
         buttonStart.setOnClickListener(v -> {
-            isRecord = true;
+//            isRecord = true;
             Choreographer.getInstance().postFrameCallback(this);
-            mGLView.queueEvent(() -> renderController.changeRecordingState(isRecord));
+//            mGLView.queueEvent(() -> renderController.changeRecordingState(isRecord));
         });
 
 
+        String f1 = "/storage/emulated/0/tencent/MicroMsg/WeiXin/mmexport1531208871527.png";
+        String f2 = "/storage/emulated/0/tencent/MicroMsg/WeiXin/mmexport1529911150337.png";
+        String f3 = "/storage/emulated/0/tencent/MicroMsg/WeiXin/mmexport1529734446397.png";
+        addBitmap(f1);
+        addBitmap(f2);
+        addBitmap(f3);
     }
 
     private void initGL() {
         mGLView.setEGLContextClientVersion(2);
-        renderController = new SimpleRender();
+//        renderController = new SimpleRender2();
+        renderController = new SimpleRender3();
         mGLView.setRenderer(renderController);
         mGLView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
@@ -152,15 +165,42 @@ public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Cho
                     int width = bitmap.getWidth();
                     Toast.makeText(this, "bitmap height=" + height + ",width=" + width, Toast.LENGTH_SHORT).show();
 //                    simplePhotoRender.setBitmap(bitmap);
-                    renderController.setBitmap(bitmap);
-                    mGLView.requestRender();
+
+
                 } finally {
                     if (cursor != null) {
                         cursor.close();
                     }
                 }
             }
+        } else if (requestCode == 5) {
+            ArrayList<String> filePaths = data.getStringArrayListExtra("bitmapPath");
+//            ArrayList<Bitmap> bitmaps = new ArrayList<>();
+            for (String filePath : filePaths) {
+                addBitmap(filePath);
+            }
+            mGLView.requestRender();
         }
+    }
+
+    private void addBitmap(String filePath) {
+        System.out.println("filePath=" + filePath);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+
+        BitmapFactory.decodeFile(filePath, options);
+        int widthPixels = displayMetrics.widthPixels / 2;
+        System.out.println("widthPixels=" + widthPixels);
+        int outWidth = options.outWidth;
+        System.out.println("outWidth=" + outWidth);
+        options.inJustDecodeBounds = false;
+        int scale = ((int) (outWidth * 1f / widthPixels * 1f)) >> 1 << 1;
+        options.inSampleSize = scale;
+        Bitmap bitmap = BitmapFactory.decodeFile(filePath, options);
+//                bitmaps.add(bitmap);
+        mGLView.queueEvent(() -> renderController.addBitmap(bitmap));
     }
 
     @Override
@@ -171,7 +211,13 @@ public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Cho
             Choreographer.getInstance().postFrameCallback(this);
         } else {
             float difSec = (frameTimeNanos - startTime) * 1f / 1000000000;
-            if (duration >= difSec && difSec > 0) {
+            if (duration >= difSec && difSec >= 0) {
+                mGLView.queueEvent(() -> {
+                    renderController.doFrame(frame, difSec, duration);
+                });
+                mGLView.requestRender();
+                Choreographer.getInstance().postFrameCallback(this);
+            } else if (duration + pauseTime >= difSec) {
                 mGLView.queueEvent(() -> {
                     renderController.doFrame(frame, difSec, duration);
                 });
@@ -179,15 +225,17 @@ public class PhotoAnimateSimpleActivity extends AppCompatActivity implements Cho
                 Choreographer.getInstance().postFrameCallback(this);
             } else {
                 startTime = 0;
-                isRecord = false;
+//                isRecord = false;
                 mGLView.queueEvent(() -> {
-                    renderController.changeRecordingState(isRecord);
+//                    renderController.changeRecordingState(isRecord);
                     renderController.doFrame(frame, 0, 0);
                 });
-                Choreographer.getInstance().removeFrameCallback(this);
-                File outputFile = renderController.getOutputFile();
-                String result = outputFile.getAbsolutePath();
-                runOnUiThread(() -> Toast.makeText(this, "save file path = " + result, Toast.LENGTH_SHORT).show());
+                mGLView.requestRender();
+                Choreographer.getInstance().postFrameCallback(this);
+//                Choreographer.getInstance().removeFrameCallback(this);
+//                File outputFile = renderController.getOutputFile();
+//                String result = outputFile.getAbsolutePath();
+//                runOnUiThread(() -> Toast.makeText(this, "save file path = " + result, Toast.LENGTH_SHORT).show());
             }
         }
     }

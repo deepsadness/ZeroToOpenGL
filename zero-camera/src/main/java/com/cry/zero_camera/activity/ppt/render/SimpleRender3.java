@@ -8,29 +8,30 @@ import android.os.Environment;
 import android.util.Log;
 
 import com.cry.zero_camera.activity.ppt.TextureMovieEncoder2D;
+import com.cry.zero_camera.render.fliter.PhotoFilter;
 import com.cry.zero_camera.render.fliter.Show2DFilter;
 import com.cry.zero_common.opengl.GLESUtils;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class SimpleRender implements GLSurfaceView.Renderer {
+public class SimpleRender3 implements GLSurfaceView.Renderer {
     private static final String TAG = "SimpleRender";
+    private static final int RECORDING_OFF = 0;
+    private static final int RECORDING_ON = 1;
+    private static final int RECORDING_RESUMED = 2;
     //bitmap buffer
-    private Bitmap mBitmap;
-
+    private ArrayList<Bitmap> mBitmaps = new ArrayList<>();
     //存放fbo的id
     private int mFrameBuffer = 0;
     private int mRenderBuffer = 0;
     private int mOffscreenTextureId = 0;
-    private static final int RECORDING_OFF = 0;
     private Show2DFilter mShow2DFilter;
-    private static final int RECORDING_ON = 1;
-    private static final int RECORDING_RESUMED = 2;
     private AnimateFilter mPhotoFilter;
-    private AnimateAlphaFilter2 mPhotoAlphaFilter;
+    private AnimateFilter mPhotoAlphaFilter;
     private long frameNanos;
     private TextureMovieEncoder2D mVideoEncoder;
     private int mRecordingStatus;
@@ -38,17 +39,19 @@ public class SimpleRender implements GLSurfaceView.Renderer {
     private File mOutputFile;
     private int width;
     private int height;
+    private int bitmapIndex = -1;
 
-    public SimpleRender() {
+    public SimpleRender3() {
         mPhotoFilter = new AnimateFilter();
         mShow2DFilter = new Show2DFilter();
         mVideoEncoder = new TextureMovieEncoder2D();
 
-        mPhotoAlphaFilter = new AnimateAlphaFilter2();
+        mPhotoAlphaFilter = new AnimateFilter();
+        mPhotoAlphaFilter.setAnimateType(4);
     }
 
-    public void setBitmap(Bitmap bitmap) {
-        this.mBitmap = bitmap;
+    public void addBitmap(Bitmap bitmap) {
+        mBitmaps.add(bitmap);
 //        mPhotoFilter.setBitmap(mBitmap);
     }
 
@@ -87,15 +90,15 @@ public class SimpleRender implements GLSurfaceView.Renderer {
         mFrameBuffer = offscreenIds[1];
         mRenderBuffer = offscreenIds[2];
 
-        if (this.mBitmap != null) {
-            mPhotoFilter.setBitmap(mBitmap);
-            mPhotoAlphaFilter.setBitmap(mBitmap);
+        if (mBitmaps.size() > 1) {
+            mPhotoFilter.setBitmap(mBitmaps.get(0));
+            mPhotoAlphaFilter.setBitmap(mBitmaps.get(1));
         }
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        if (mBitmap != null && !mBitmap.isRecycled()) {
+        if (!mBitmaps.isEmpty()) {
             //进行录制
             if (mRecordingEnabled) {
                 switch (mRecordingStatus) {
@@ -143,8 +146,15 @@ public class SimpleRender implements GLSurfaceView.Renderer {
 //            }
 //            GLES20.glEnable(GLES20.GL_BLEND);
 //            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_DST_ALPHA);
-//            mPhotoFilter.onDrawFrame();
-            mPhotoAlphaFilter.onDrawFrame();
+            System.out.println("mPhotoAlphaFilter draw textureId=" + mPhotoAlphaFilter.getTextureId());
+//            if (bitmapIndex%2==1){
+            mPhotoFilter.onDrawFrame();
+//                mPhotoAlphaFilter.onDrawFrame();
+//            }else {
+//                mPhotoAlphaFilter.onDrawFrame();
+            mPhotoFilter.onDrawFrame();
+//            }
+
 //            GLES20.glDisable(GLES20.GL_BLEND);
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
@@ -171,22 +181,64 @@ public class SimpleRender implements GLSurfaceView.Renderer {
         this.mRecordingEnabled = isRecording;
     }
 
-    public void doFrame(long frame, float difSec, long duration) {
+    public synchronized void doFrame(long frame, float difSec, long duration) {
         frameNanos = frame;
         if (duration == 0) {
+            change();
             return;
         }
         mPhotoAlphaFilter.doFrame(difSec, duration);
-//        mPhotoFilter.doFrame(difSec, duration);
+        mPhotoFilter.doFrame(difSec, duration);
+    }
+
+    public void change() {
+//        System.out.println("bitmapIndex=" + bitmapIndex);
+//        bitmapIndex++;
+//
+//        if (bitmapIndex + 1 < mBitmaps.size()) {
+//            Bitmap bitmap = mBitmaps.get(bitmapIndex);
+//            moveTextureId(mPhotoFilter, mPhotoAlphaFilter, bitmap);
+//
+//            mPhotoAlphaFilter.setAnimateType(4);
+//
+//            if (bitmapIndex + 2 < mBitmaps.size()) {
+//                mPhotoFilter.setBitmap(mBitmaps.get(bitmapIndex + 1));
+//            } else {
+//                mPhotoFilter.setBitmap(mBitmaps.get(0));
+//            }
+//        } else {
+//            bitmapIndex = 0;
+//            Bitmap bitmap = mBitmaps.get(bitmapIndex);
+//            moveTextureId(mPhotoFilter, mPhotoAlphaFilter, bitmap);
+//            mPhotoFilter.setBitmap(mBitmaps.get(bitmapIndex + 1));
+//        }
+        bitmapIndex++;
+        if (bitmapIndex % 2 == 1) {
+            mPhotoFilter.setAnimateType(4);
+            mPhotoAlphaFilter.setAnimateType(2);
+        } else {
+            mPhotoFilter.setAnimateType(2);
+            mPhotoAlphaFilter.setAnimateType(4);
+        }
+    }
+
+    private void moveTextureId(PhotoFilter src, PhotoFilter dst, Bitmap bitmap) {
+        int textureId = src.getTextureId();
+        if (textureId != 0) {
+            dst.setTextureId(textureId);
+        } else {
+            dst.setBitmap(bitmap);
+        }
+        System.out.println("mPhotoAlphaFilter change textureId=" + mPhotoAlphaFilter.getTextureId());
     }
 
     public int getAnimateType() {
-        return mPhotoAlphaFilter.getAnimateType();
+        return mPhotoFilter.getAnimateType();
     }
 
     public void setAnimateType(int resultType) {
 //        mPhotoAlphaFilter.setAnimateType(resultType);
-//        mPhotoFilter.setAnimateType(resultType);
+        mPhotoFilter.setAnimateType(resultType);
     }
 
     public File getOutputFile() {

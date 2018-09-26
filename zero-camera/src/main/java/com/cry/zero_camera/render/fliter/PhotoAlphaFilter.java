@@ -1,14 +1,18 @@
 package com.cry.zero_camera.render.fliter;
 
 import android.graphics.Bitmap;
+import android.opengl.GLES20;
 
 import com.cry.zero_common.opengl.GLESUtils;
 import com.cry.zero_common.opengl.MatrixUtils;
 
-public class PhotoFilter extends I2DFilter {
+public class PhotoAlphaFilter extends I2DFilter {
     private Bitmap mBitmap;
+    private int uAlphaLocation;
+    private float mAlpha = 0.2f;
+    ;
 
-    public PhotoFilter() {
+    public PhotoAlphaFilter() {
     }
 
     @Override
@@ -30,14 +34,27 @@ public class PhotoFilter extends I2DFilter {
                 "\n" +
                 "varying vec2 vTextureCoordinate;\n" +
                 "uniform sampler2D uTexture;\n" +
+                "uniform float uAlphaLocation;\n" +
                 "void main() {\n" +
-                "    gl_FragColor = texture2D(uTexture,vTextureCoordinate);\n" +
+                "    gl_FragColor = vec4(texture2D(uTexture,vTextureCoordinate).rgb,uAlphaLocation);\n" +
                 "}";
     }
 
     @Override
-    public void onExtraCreated(int mProgram) {
+    public void onClear() {
 
+    }
+
+    @Override
+    public void onExtraCreated(int mProgram) {
+        uAlphaLocation = GLES20.glGetUniformLocation(mProgram, "uAlphaLocation");
+    }
+
+    @Override
+    protected void onExtraData() {
+        super.onExtraData();
+
+        GLES20.glUniform1f(uAlphaLocation, mAlpha);
     }
 
     public Bitmap getBitmap() {
@@ -45,27 +62,25 @@ public class PhotoFilter extends I2DFilter {
     }
 
     public void setBitmap(Bitmap bitmap) {
-        if (mBitmap == bitmap) {
-            return;
-        }
-        if (this.mBitmap != null) {
-            releaseBitmap();
-        }
+//        if (this.mBitmap == bitmap) {
+//            return;
+//        }
         this.mBitmap = bitmap;
+//        deleteTextureId();
         setTextureId(GLESUtils.createTexture(bitmap));
         setMVPMatrix(MatrixUtils.calculateMatrixForBitmap(bitmap, width, height));
     }
 
-    @Override
-    public void release() {
-        releaseBitmap();
-        super.release();
+    private void deleteTextureId() {
+        int preTextureId = getTextureId();
+        if (preTextureId != 0) {
+            int[] values = new int[1];
+            values[0] = preTextureId;
+            GLES20.glDeleteTextures(1, values, 0);
+        }
     }
 
-    private void releaseBitmap() {
-        if (this.mBitmap != null) {
-            mBitmap.recycle();
-            mBitmap = null;
-        }
+    public void setAlpha(float mAlpha) {
+        this.mAlpha = mAlpha;
     }
 }

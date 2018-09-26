@@ -8,7 +8,7 @@ import android.view.View;
 import com.cry.zero_camera.activity.camera_filter.CameraCaptureFilterActivity;
 import com.cry.zero_camera.activity.capture.CameraCaptureActivity;
 import com.cry.zero_camera.activity.double_input.DoubleInput2Activity;
-import com.cry.zero_camera.activity.ppt.ccc.RecordFBOActivity;
+import com.cry.zero_camera.activity.ppt.backgroud.GenerateMovieActivity;
 import com.cry.zero_camera.activity.video.VideoCaptureFilterActivity;
 import com.cry.zero_camera.preview.CameraActivity;
 
@@ -40,9 +40,16 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(this, DoubleInput2Activity.class));
     }
 
-    public void ToPhotoAnimate(View view) {
-        startActivity(new Intent(this, RecordFBOActivity.class));
+//    public void ToPhotoAnimate(View view) {
+//        startActivity(new Intent(this, PhotoAnimateSimpleActivity.class));
+//    }
+//
+//    public void ToRecordFBOActivity(View view) {
+//        startActivity(new Intent(this, RecordFBOActivity.class));
+//    }
+
+
+    public void startGenerate(View view) {
+        startActivity(new Intent(this, GenerateMovieActivity.class));
     }
-
-
 }

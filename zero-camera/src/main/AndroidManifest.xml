@@ -14,9 +14,11 @@
         <activity android:name=".activity.capture.CameraCaptureActivity" />
         <activity android:name=".activity.camera_filter.CameraCaptureFilterActivity" />
         <activity android:name=".activity.video.VideoCaptureFilterActivity" />
-        <activity android:name=".activity.double_input.DoubleInput2Activity"></activity>
+        <activity android:name=".activity.double_input.DoubleInput2Activity" />
         <activity android:name=".activity.ppt.PhotoAnimateSimpleActivity" />
         <activity android:name=".activity.ppt.ccc.RecordFBOActivity" />
+        <activity android:name=".activity.ppt.PickMorePicsActivity" />
+        <activity android:name=".activity.ppt.backgroud.GenerateMovieActivity"></activity>
     </application>
 
 </manifest>

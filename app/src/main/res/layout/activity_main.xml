@@ -46,11 +46,25 @@
             android:text="ToZeroDoubleInput2"
             android:textAllCaps="false" />
 
+        <!--<Button-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:onClick="ToRecordFBOActivity"-->
+        <!--android:text="ToRecordFBOActivity"-->
+        <!--android:textAllCaps="false" />-->
+
+        <!--<Button-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:onClick="ToPhotoAnimate"-->
+        <!--android:text="ToPhotoAnimate"-->
+        <!--android:textAllCaps="false" />-->
+
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:onClick="ToPhotoAnimate"
-            android:text="ToPhotoAnimate"
+            android:onClick="startGenerate"
+            android:text="GenerateMovieActivity"
             android:textAllCaps="false" />
 
     </LinearLayout>

@@ -99,11 +99,22 @@ public abstract class I2DFilter {
     }
 
     public void onDrawFrame() {
+        beforeDraw();
         onClear();
         onUseProgram();
         onExtraData();
         onBindTexture();
         onDraw();
+        afterDraw();
+    }
+
+
+    protected void beforeDraw() {
+
+    }
+
+    protected void afterDraw() {
+
     }
 
     protected void onClear() {
@@ -135,6 +146,20 @@ public abstract class I2DFilter {
 
         GLES20.glDisableVertexAttribArray(glPosition);
         GLES20.glDisableVertexAttribArray(glCoordinate);
+    }
+
+
+    public void release() {
+        if (mTextureId != 0) {
+            int[] values = new int[1];
+            values[0] = mTextureId;
+            GLES20.glDeleteTextures(1, values, 0);
+            mTextureId = 0;
+        }
+        if (mProgram != 0) {
+            GLES20.glDeleteProgram(mProgram);
+            mProgram = 0;
+        }
     }
 
     public int getTextureId() {
