@@ -1,4 +1,4 @@
-package com.cry.zero_camera.activity.ppt.backgroud;
+package com.cry.zero_camera.activity.movie;
 
 public interface MovieMaker {
 

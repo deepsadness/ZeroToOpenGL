@@ -18,7 +18,7 @@
         <activity android:name=".activity.ppt.PhotoAnimateSimpleActivity" />
         <activity android:name=".activity.ppt.ccc.RecordFBOActivity" />
         <activity android:name=".activity.ppt.PickMorePicsActivity" />
-        <activity android:name=".activity.ppt.backgroud.GenerateMovieActivity"></activity>
+        <activity android:name=".activity.movie.GenerateMovieActivity"></activity>
     </application>
 
 </manifest>

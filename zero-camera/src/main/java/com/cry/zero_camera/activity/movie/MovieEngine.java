@@ -1,4 +1,4 @@
-package com.cry.zero_camera.activity.ppt.backgroud;
+package com.cry.zero_camera.activity.movie;
 
 import android.os.Environment;
 import android.os.Handler;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-import static com.cry.zero_camera.activity.ppt.backgroud.MovieMaker.ONE_BILLION;
+import static com.cry.zero_camera.activity.movie.MovieMaker.ONE_BILLION;
 
 public class MovieEngine extends HandlerThread {
 

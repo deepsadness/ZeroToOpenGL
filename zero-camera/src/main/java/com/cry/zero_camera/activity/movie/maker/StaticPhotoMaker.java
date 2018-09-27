@@ -1,8 +1,8 @@
-package com.cry.zero_camera.activity.ppt.backgroud.maker;
+package com.cry.zero_camera.activity.movie.maker;
 
 import android.graphics.Bitmap;
 
-import com.cry.zero_camera.activity.ppt.backgroud.MovieMaker;
+import com.cry.zero_camera.activity.movie.MovieMaker;
 import com.cry.zero_camera.render.fliter.PhotoFilter;
 import com.cry.zero_common.BitmapHelper;
 

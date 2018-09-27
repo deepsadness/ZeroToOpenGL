@@ -1,4 +1,4 @@
-package com.cry.zero_camera.activity.ppt.backgroud;
+package com.cry.zero_camera.activity.movie;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -9,8 +9,8 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.cry.zero_camera.R;
-import com.cry.zero_camera.activity.ppt.backgroud.maker.AnimateGroupPhotoMaker;
-import com.cry.zero_camera.activity.ppt.backgroud.maker.StaticPhotoMaker;
+import com.cry.zero_camera.activity.movie.maker.AnimateGroupPhotoMaker;
+import com.cry.zero_camera.activity.movie.maker.StaticPhotoMaker;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import io.reactivex.disposables.CompositeDisposable;
